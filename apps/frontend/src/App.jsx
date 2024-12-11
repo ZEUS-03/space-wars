@@ -4,7 +4,7 @@ import PhaserGame from "./phaser/PhaserGame";
 const App = () => {
   const [ws, setWs] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [localPlayerId, setLocalPlayerId] = useState(null);
+  const [localPlayerId, setLocalPlayerId] = useState("");
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:8080/ws?room_id=room123");
@@ -45,13 +45,21 @@ const App = () => {
       }
 
       case "player_connected":
+        // if (!localPlayerId) {
+        //   console.log("localPlayerId", data.player_id);
+        //   setLocalPlayerId(data.player_id);
+        //   console.log("localPlayerId2", localPlayerId);
+        // }
+
+        // addPlayer(data.player_id, data.x, data.y);
+        break;
+
+      case "player_id_assigned":
         if (!localPlayerId) {
           console.log("localPlayerId", data.player_id);
           setLocalPlayerId(data.player_id);
         }
-        // addPlayer(data.player_id, data.x, data.y);
         break;
-
       case "all_players_position":
         console.log("isCulprit");
         setPlayers(data.data);
@@ -68,11 +76,11 @@ const App = () => {
     }
   };
 
-  console.log("players", players);
-
+  // console.log("players", players);
+  // console.log("localPlayerId2", localPlayerId);
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <PhaserGame players={players} />
+      <PhaserGame players={players} localPlayerId={localPlayerId} />
     </div>
   );
 };
