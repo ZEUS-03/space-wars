@@ -8,8 +8,8 @@ const PhaserGame = ({ sendMessage, players, localPlayerId }) => {
     const config = {
       type: Phaser.AUTO,
       parent: phaserContainer.current,
-      width: 800,
-      height: 600,
+      width: 400,
+      height: 400,
       physics: {
         default: "arcade",
         arcade: {
@@ -37,12 +37,14 @@ const PhaserGame = ({ sendMessage, players, localPlayerId }) => {
 
     function create() {
       // Add sprites for all players
+
       players.forEach((player) => {
         const id = player["id"];
+
         if (!playerSprites[id]) {
           const sprite = this.physics.add.sprite(player.x, player.y, "player");
-          playerSprites[id] = sprite;
-
+          playerSprites[`${id}`] = sprite;
+          console.log("id", id);
           const text = this.add.text(player.x + 25, player.y + 10, id, {
             font: "12px Arial",
             fill: "#ffffff",
@@ -53,46 +55,47 @@ const PhaserGame = ({ sendMessage, players, localPlayerId }) => {
         }
       });
 
-      // Keyboard input for local player
-      this.input.keyboard.on("keydown", (event) => {
-        const localSprite = playerSprites[localPlayerId];
-        if (!localSprite) return;
-        console.log(playerSprites);
-        let x = localSprite.x;
-        let y = localSprite.y;
-
-        switch (event.key) {
-          case "ArrowUp":
-            y -= 10;
-            break;
-          case "ArrowDown":
-            y += 10;
-            break;
-          case "ArrowLeft":
-            x -= 10;
-            break;
-          case "ArrowRight":
-            x += 10;
-            break;
-          default:
-            return;
-        }
-
-        // Update local sprite position
-        localSprite.setPosition(x, y);
-
-        // Notify the server of the position update
-        sendMessage({
-          type: "update_position",
-          id: localPlayerId,
-          x,
-          y,
-        });
-      });
+      this.cursors = this.input.keyboard.createCursorKeys();
+      console.log(playerSprites);
     }
 
     function update() {
       // Update positions of all sprites based on the `players` state
+      // console.log("players", players);
+      // console.log("entered update");
+      const localSprite = playerSprites[localPlayerId];
+      // console.log("playerSprites", playerSprites);
+      if (localSprite && this.cursors) {
+        let moved = false; // Track if the player moved
+
+        if (this.cursors.up.isDown) {
+          localSprite.y -= 2;
+          moved = true;
+        } else if (this.cursors.down.isDown) {
+          localSprite.y += 2;
+          moved = true;
+        }
+        if (this.cursors.left.isDown) {
+          localSprite.x -= 2;
+          moved = true;
+        } else if (this.cursors.right.isDown) {
+          localSprite.x += 2;
+          moved = true;
+        }
+        // Update local sprite position
+        localSprite.setPosition(localSprite.x, localSprite.y);
+
+        if (moved) {
+          // Notify the server of the new position
+          sendMessage({
+            type: "update_position",
+            id: localPlayerId,
+            x: localSprite.x,
+            y: localSprite.y,
+          });
+        }
+      }
+
       Object.keys(players).forEach((id) => {
         if (!playerSprites[id]) {
           // Add new players dynamically
