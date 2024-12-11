@@ -50,6 +50,16 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Player %s connected to room %s\n", playerID, roomId)
 
+	playerInitMessage := map[string]interface{}{
+		"type":      "player_id_assigned",
+		"player_id": playerID,
+	}
+
+	if err := ws.WriteJSON(playerInitMessage); err != nil {
+		fmt.Println("Error sending player ID:", err)
+		return
+	}
+
 	for _, player := range rooms[roomId].Players {
 		player.Ws.WriteJSON(map[string]interface{}{
 				"type": "player_connected",
