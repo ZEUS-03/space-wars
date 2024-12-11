@@ -4,6 +4,7 @@ import (
 	"ws/internal/domain"
 	"github.com/gorilla/websocket"
 	"fmt"
+	"math/rand"
 )
 
 func GetPlayerLocations(rooms map[string]*domain.Room, roomID string) []map[string]interface{} {
@@ -28,6 +29,8 @@ func CreateRoom(rooms map[string]*domain.Room, roomID string) *domain.Room{
 }
 
 func AddPlayerToRoom(room *domain.Room, roomId string, playerId string, ws*websocket.Conn) {
-	room.Players[playerId] = &domain.Player{ID: playerId, Position: domain.Position{X: float64(len(room.Players)*10), Y: float64(len(room.Players)*10)}, Ws: ws}
+	randomIntX := rand.Intn(380)
+	randomIntY := rand.Intn(380)
+	room.Players[playerId] = &domain.Player{ID: playerId, Position: domain.Position{X: float64(randomIntX), Y: float64(randomIntY)}, Ws: ws}
 	fmt.Printf("rooms-- %v",room)
 }
