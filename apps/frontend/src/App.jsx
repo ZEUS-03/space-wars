@@ -32,7 +32,8 @@ const App = () => {
     console.log("Message from server:", data);
     switch (data.type) {
       case "update_single_player_position": {
-        console.log("players--", players);
+        console.log("data", data);
+        console.log("playerid", players);
         const updatedPlayers = players.map(
           (player) =>
             player.id === data.player_id
@@ -40,7 +41,7 @@ const App = () => {
               : player // Keep the existing player
         );
         console.log("updatedPlayers--", updatedPlayers);
-        setPlayers([...updatedPlayers]); // Set the new players array
+        // setPlayers([...updatedPlayers]); // Set the new players array
         break;
       }
 
@@ -50,18 +51,17 @@ const App = () => {
         //   setLocalPlayerId(data.player_id);
         //   console.log("localPlayerId2", localPlayerId);
         // }
-
-        // addPlayer(data.player_id, data.x, data.y);
+        console.log("data", data);
+        // setPlayers([ ...players, {data.player_id: { id: data.player_id, x: data.x, y: data.y }} ]);
         break;
 
       case "player_id_assigned":
         if (!localPlayerId) {
-          console.log("localPlayerId", data.player_id);
+          console.log("player_id_assigned", data.player_id);
           setLocalPlayerId(data.player_id);
         }
         break;
       case "all_players_position":
-        console.log("isCulprit");
         setPlayers(data.data);
         break;
 
@@ -80,7 +80,11 @@ const App = () => {
   // console.log("localPlayerId2", localPlayerId);
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <PhaserGame players={players} localPlayerId={localPlayerId} />
+      <PhaserGame
+        players={players}
+        localPlayerId={localPlayerId}
+        sendMessage={sendMessage}
+      />
     </div>
   );
 };

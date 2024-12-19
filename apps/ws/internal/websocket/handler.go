@@ -3,12 +3,13 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"net/http"
 
-	"ws/internal/utils"
+	"github.com/google/uuid"
+
 	"ws/internal/domain"
 	"ws/internal/game"
+	"ws/internal/utils"
 )
 
 var rooms = make(map[string]*domain.Room)

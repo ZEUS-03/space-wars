@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import Phaser from "phaser";
 
-const PhaserGame = ({ sendMessage, players, localPlayerId }) => {
+const PhaserGame = ({ players, localPlayerId, sendMessage }) => {
   const phaserContainer = useRef(null);
 
   useEffect(() => {
     const config = {
       type: Phaser.AUTO,
       parent: phaserContainer.current,
-      width: 400,
+      width: 600,
       height: 400,
       physics: {
         default: "arcade",
@@ -24,106 +24,90 @@ const PhaserGame = ({ sendMessage, players, localPlayerId }) => {
     };
 
     const game = new Phaser.Game(config);
-    let playerSprites = {}; // Map of player sprites
+    let playerSprites = {}; // Stores all player sprites by their IDs
+    let cursors;
 
     function preload() {
       const graphics = this.add.graphics();
-      graphics.fillStyle(0x00ff00, 0.8);
-      graphics.fillCircle(20, 20, 20); // A basic green circle
+      graphics.fillStyle(0x00ff00, 1);
+      graphics.fillCircle(20, 20, 20); // Creates a green circle texture
       graphics.generateTexture("player", 40, 40);
-
-      // graphics.destroy();
+      graphics.destroy();
     }
 
     function create() {
-      // Add sprites for all players
-
+      // Add players from props
       players.forEach((player) => {
-        const id = player["id"];
-
-        if (!playerSprites[id]) {
-          const sprite = this.physics.add.sprite(player.x, player.y, "player");
-          playerSprites[`${id}`] = sprite;
-          console.log("id", id);
-          const text = this.add.text(player.x + 25, player.y + 10, id, {
-            font: "12px Arial",
-            fill: "#ffffff",
-            align: "center",
-          });
-          text.setOrigin(0.5); // Center the text horizontally
-          playerSprites[id].label = text;
-        }
+        console.log("id", player.id);
+        const { x, y } = player;
+        addPlayer(this, player.id, x, y);
       });
 
-      this.cursors = this.input.keyboard.createCursorKeys();
-      console.log(playerSprites);
+      // Set up keyboard input
+      cursors = this.input.keyboard.createCursorKeys();
     }
 
     function update() {
-      // Update positions of all sprites based on the `players` state
-      // console.log("players", players);
-      // console.log("entered update");
-      const localSprite = playerSprites[localPlayerId];
-      // console.log("playerSprites", playerSprites);
-      if (localSprite && this.cursors) {
-        let moved = false; // Track if the player moved
+      const player = playerSprites[localPlayerId];
+      if (player && cursors) {
+        let moved = false;
 
-        if (this.cursors.up.isDown) {
-          localSprite.y -= 2;
+        if (cursors.up.isDown) {
+          player.y -= 2;
           moved = true;
-        } else if (this.cursors.down.isDown) {
-          localSprite.y += 2;
-          moved = true;
-        }
-        if (this.cursors.left.isDown) {
-          localSprite.x -= 2;
-          moved = true;
-        } else if (this.cursors.right.isDown) {
-          localSprite.x += 2;
+        } else if (cursors.down.isDown) {
+          player.y += 2;
           moved = true;
         }
-        // Update local sprite position
-        localSprite.setPosition(localSprite.x, localSprite.y);
+
+        if (cursors.left.isDown) {
+          player.x -= 2;
+          moved = true;
+        } else if (cursors.right.isDown) {
+          player.x += 2;
+          moved = true;
+        }
 
         if (moved) {
-          // Notify the server of the new position
+          player.label.setPosition(player.x, player.y - 25);
           sendMessage({
             type: "update_position",
             id: localPlayerId,
-            x: localSprite.x,
-            y: localSprite.y,
+            x: player.x,
+            y: player.y,
           });
         }
       }
 
-      Object.keys(players).forEach((id) => {
-        if (!playerSprites[id]) {
-          // Add new players dynamically
-          const player = players[id];
-          const sprite = this.physics.add.sprite(player.x, player.y, "player");
-          sprite.setCollideWorldBounds(true);
-          playerSprites[id] = sprite;
-        } else {
-          // Update existing players' positions
-          const sprite = playerSprites[id];
-          sprite.setPosition(players[id].x, players[id].y);
+      // Update positions for all other players
+      players.forEach((player) => {
+        const playerId = player.id;
+        if (playerId !== localPlayerId && playerSprites[playerId]) {
+          const { x, y } = player;
+          playerSprites[playerId].setPosition(x, y);
+          playerSprites[playerId].label.setPosition(x, y - 25);
         }
       });
+    }
 
-      // Remove sprites for players no longer in the state
-      Object.keys(playerSprites).forEach((id) => {
-        if (!players[id]) {
-          playerSprites[id].destroy();
-          delete playerSprites[id];
-        }
-      });
+    function addPlayer(scene, id, x, y) {
+      if (!playerSprites[id]) {
+        const sprite = scene.physics.add.sprite(x, y, "player");
+        const label = scene.add.text(x, y - 25, id.slice(-4), {
+          font: "12px Arial",
+          fill: "#ffffff",
+        });
+
+        sprite.label = label;
+        playerSprites[id] = sprite;
+      }
     }
 
     // Clean up Phaser instance on unmount
     return () => {
       game.destroy(true);
     };
-  }, [players, sendMessage]);
+  }, [players, localPlayerId]);
 
   return (
     <div ref={phaserContainer} style={{ width: "100%", height: "100%" }} />
