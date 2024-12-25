@@ -65,6 +65,8 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		player.Ws.WriteJSON(map[string]interface{}{
 				"type": "player_connected",
 				"player_id": playerID,
+				"x": rooms[roomId].Players[playerID].Position.X,
+				"y": rooms[roomId].Players[playerID].Position.Y,
 		})
 	}	
 

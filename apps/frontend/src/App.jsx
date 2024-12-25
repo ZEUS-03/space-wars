@@ -29,6 +29,7 @@ const App = () => {
   }, []);
 
   const handleServerMessage = (data) => {
+    let addedPlayer = [];
     console.log("Message from server:", data);
     switch (data.type) {
       case "update_single_player_position": {
@@ -41,18 +42,19 @@ const App = () => {
               : player // Keep the existing player
         );
         console.log("updatedPlayers--", updatedPlayers);
-        // setPlayers([...updatedPlayers]); // Set the new players array
+        setPlayers([...updatedPlayers]); // Set the new players array
+        console.log("plyers", players);
         break;
       }
 
       case "player_connected":
-        // if (!localPlayerId) {
-        //   console.log("localPlayerId", data.player_id);
-        //   setLocalPlayerId(data.player_id);
-        //   console.log("localPlayerId2", localPlayerId);
-        // }
-        console.log("data", data);
-        // setPlayers([ ...players, {data.player_id: { id: data.player_id, x: data.x, y: data.y }} ]);
+        if (localPlayerId && localPlayerId === data.player_id) {
+          break;
+        }
+        // if
+        
+
+        // console.log("new added player", players);
         break;
 
       case "player_id_assigned":

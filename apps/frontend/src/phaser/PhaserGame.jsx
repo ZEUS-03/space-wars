@@ -38,7 +38,6 @@ const PhaserGame = ({ players, localPlayerId, sendMessage }) => {
     function create() {
       // Add players from props
       players.forEach((player) => {
-        console.log("id", player.id);
         const { x, y } = player;
         addPlayer(this, player.id, x, y);
       });
