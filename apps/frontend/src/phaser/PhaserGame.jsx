@@ -69,12 +69,16 @@ const PhaserGame = ({ players, localPlayerId, sendMessage }) => {
 
         if (moved) {
           player.label.setPosition(player.x, player.y - 25);
-          sendMessage({
-            type: "update_position",
-            id: localPlayerId,
-            x: player.x,
-            y: player.y,
-          });
+
+          if (!this.lastSentTime || Date.now() - this.lastSentTime > 1000) {
+            this.lastSentTime = Date.now();
+            sendMessage({
+              type: "update_position",
+              id: localPlayerId,
+              x: player.x,
+              y: player.y,
+            });
+          }
         }
       }
 
@@ -104,7 +108,7 @@ const PhaserGame = ({ players, localPlayerId, sendMessage }) => {
 
     // Clean up Phaser instance on unmount
     return () => {
-      game.destroy(true);
+      game.destroy(true, false);
     };
   }, [players, localPlayerId]);
 

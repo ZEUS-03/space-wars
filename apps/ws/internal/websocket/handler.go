@@ -47,7 +47,12 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	newLocations["type"] = "all_players_position"
 	newLocations["data"] = locations	
 
-	game.BroadcastToPlayers(room.Players, newLocations)
+	// game.BroadcastToPlayers(room.Players, newLocations)
+
+	if err := ws.WriteJSON(newLocations); err != nil {
+		fmt.Println("Error sending player ID:", err)
+		return
+	}
 
 	fmt.Printf("Player %s connected to room %s\n", playerID, roomId)
 
@@ -61,13 +66,24 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// var connectedPlayer = make(map[string]interface{})
+	// connectedPlayer["type"] = "player_connected"
+	// connectedPlayer["player_id"] = playerID
+	// connectedPlayer["x"] = room.Players[playerID].Position.X
+	// connectedPlayer["y"] = room.Players[playerID].Position.Y
+
+	// game.BroadcastToPlayers(room.Players, connectedPlayer)
+
 	for _, player := range rooms[roomId].Players {
-		player.Ws.WriteJSON(map[string]interface{}{
-				"type": "player_connected",
-				"player_id": playerID,
-				"x": rooms[roomId].Players[playerID].Position.X,
-				"y": rooms[roomId].Players[playerID].Position.Y,
-		})
+		if player.ID != playerID {
+			// fmt.Printf("Sending player %s", player.ID)
+			player.Ws.WriteJSON(map[string]interface{}{
+					"type": "player_connected",
+					"player_id": playerID,
+					"x": rooms[roomId].Players[playerID].Position.X,
+					"y": rooms[roomId].Players[playerID].Position.Y,
+			})
+		}
 	}	
 
 	// Handle communication
@@ -93,19 +109,22 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			x := wsMsg["x"].(float64)
 			y := wsMsg["y"].(float64)
 			rooms[roomId].Players[playerID].Position = domain.Position{X: x, Y: y}
-
-			for _, p := range rooms[roomId].Players {
-        err := p.Ws.WriteJSON(map[string]interface{}{
-            "type":    "update_single_player_position",
-            "player_id": playerID,
-            "x":       x,
-            "y":       y,
-        })
-        if err != nil {
-            fmt.Println("Error broadcasting position:", err)
-        }
-    	}
-		}
+			// if time.Since(lastBroadcastTime) > 100 * time.Millisecond {
+    	// 	lastBroadcastTime = time.Now()
+				
+				for _, p := range rooms[roomId].Players {
+					err := p.Ws.WriteJSON(map[string]interface{}{
+							"type":    "update_single_player_position",
+							"player_id": playerID,
+							"x":       x,
+							"y":       y,
+					})
+					if err != nil {
+							fmt.Println("Error broadcasting position:", err)
+					}
+				}
+			}
+		// }
 		fmt.Printf("rooms %v", rooms[roomId].Players); 
 		for _, player := range rooms[roomId].Players {
 			ws.WriteJSON(player)

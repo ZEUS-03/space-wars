@@ -29,40 +29,39 @@ const App = () => {
   }, []);
 
   const handleServerMessage = (data) => {
-    let addedPlayer = [];
     console.log("Message from server:", data);
     switch (data.type) {
       case "update_single_player_position": {
-        console.log("data", data);
-        console.log("playerid", players);
-        const updatedPlayers = players.map(
-          (player) =>
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
             player.id === data.player_id
-              ? { ...player, x: data.x, y: data.y } // Update player position
-              : player // Keep the existing player
+              ? { ...player, x: data.x, y: data.y } // Update only the specific player
+              : player
+          )
         );
-        console.log("updatedPlayers--", updatedPlayers);
-        setPlayers([...updatedPlayers]); // Set the new players array
-        console.log("plyers", players);
         break;
       }
 
       case "player_connected":
-        if (localPlayerId && localPlayerId === data.player_id) {
-          break;
-        }
-        // if
-        
-
-        // console.log("new added player", players);
+        setPlayers((prevPlayers) => {
+          if (!prevPlayers.some((player) => player.id === data.player_id)) {
+            return [
+              ...prevPlayers,
+              { id: data.player_id, x: data.x, y: data.y },
+            ];
+          }
+          return prevPlayers; // No changes if the player is already in the state
+        });
         break;
 
+      // Storing local player id in state variable.
       case "player_id_assigned":
         if (!localPlayerId) {
-          console.log("player_id_assigned", data.player_id);
           setLocalPlayerId(data.player_id);
         }
         break;
+
+      // updating all player position when new player joins
       case "all_players_position":
         setPlayers(data.data);
         break;
@@ -71,7 +70,7 @@ const App = () => {
         console.log("Unknown message type:", data.type);
     }
   };
-
+  console.log("final players", players);
   const sendMessage = (message) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
