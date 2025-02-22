@@ -1,20 +1,24 @@
 package game
 
-import ( 
-	"ws/internal/domain"
-	"github.com/gorilla/websocket"
+import (
 	"fmt"
 	"math/rand"
+	"ws/internal/domain"
+
+	"github.com/gorilla/websocket"
 )
+
+// ToDo: Add rotations when a new player joins the room
 
 func GetPlayerLocations(rooms map[string]*domain.Room, roomID string) []map[string]interface{} {
 	locations := []map[string]interface{}{}
 	if room, exists := rooms[roomID]; exists {
 			for _, player := range room.Players {
 					locations = append(locations, map[string]interface{}{
-							"id":  player.ID,
+							"player_id":  player.ID,
 							"x":   player.Position.X,
 							"y":   player.Position.Y,
+							"rotation": player.Position.Rotation,
 					})
 			}
 	}
@@ -31,6 +35,6 @@ func CreateRoom(rooms map[string]*domain.Room, roomID string) *domain.Room{
 func AddPlayerToRoom(room *domain.Room, roomId string, playerId string, ws*websocket.Conn) {
 	randomIntX := rand.Intn(380)
 	randomIntY := rand.Intn(380)
-	room.Players[playerId] = &domain.Player{ID: playerId, Position: domain.Position{X: float64(randomIntX), Y: float64(randomIntY)}, Ws: ws}
+	room.Players[playerId] = &domain.Player{ID: playerId, Position: domain.Position{X: float64(randomIntX), Y: float64(randomIntY), Rotation: 0}, Ws: ws}
 	fmt.Printf("rooms-- %v",room)
 }
