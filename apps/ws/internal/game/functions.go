@@ -35,6 +35,6 @@ func CreateRoom(rooms map[string]*domain.Room, roomID string) *domain.Room{
 func AddPlayerToRoom(room *domain.Room, roomId string, playerId string, ws*websocket.Conn) {
 	randomIntX := rand.Intn(380)
 	randomIntY := rand.Intn(380)
-	room.Players[playerId] = &domain.Player{ID: playerId, Position: domain.Position{X: float64(randomIntX), Y: float64(randomIntY), Rotation: 0}, Ws: ws}
+	room.Players[playerId] = &domain.Player{ID: playerId, Health: 100, Position: domain.Position{X: float64(randomIntX), Y: float64(randomIntY), Rotation: 0}, Ws: ws}
 	fmt.Printf("rooms-- %v",room)
 }

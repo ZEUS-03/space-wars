@@ -41,8 +41,6 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	game.AddPlayerToRoom(room, roomId, playerID, ws)
 
 	defer func() {
-		fmt.Printf("Player %s disconnected from room %s\n", playerID, roomId)
-
 		// Remove the player from the room
 		delete(room.Players, playerID)
 
@@ -98,6 +96,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 					"x": rooms[roomId].Players[playerID].Position.X,
 					"y": rooms[roomId].Players[playerID].Position.Y,
 					"rotation": rooms[roomId].Players[playerID].Position.Rotation,
+					"health": rooms[roomId].Players[playerID].Health,
 			})
 		}
 	}	
@@ -120,7 +119,20 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		fmt.Printf("Received: %v\n", wsMsg["x"])
+		if wsMsg["type"] == "collision_detected" {
+			player1:= wsMsg["localPlayerId"].(string)
+			player2:= wsMsg["OtherPlayerId"].(string)
+
+			response:= map[string]interface{}{
+				"type": "collion_detected",
+				"player1": player1,
+				"health": 0,
+				"player2": player2,
+			}
+			game.BroadcastToPlayers(rooms[roomId].Players, response)
+		}
+
+		// fmt.Printf("Received: ", wsMsg["type"])
 		if wsMsg["type"] == "update_position" {
 			x := wsMsg["x"].(float64)
 			y := wsMsg["y"].(float64)
@@ -139,10 +151,50 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		fmt.Printf("rooms %v", rooms[roomId].Players); 
-		for _, player := range rooms[roomId].Players {
-			ws.WriteJSON(player)
+
+		if wsMsg["type"] == "bullet_fired" {
+			x:= wsMsg["x"].(float64)
+			y:= wsMsg["y"].(float64)
+			playerID := wsMsg["id"].(string)
+			rotation := wsMsg["rotation"].(float64)
+
+			for _, player := range rooms[roomId].Players {
+				if player.ID != playerID {
+					player.Ws.WriteJSON(map[string]interface{}{
+							"type": "bullet_fired",
+							"player_id": playerID,
+							"x": x,
+							"y": y,
+							"rotation": rotation,
+					})
+				}
+			}	
 		}
+		if wsMsg["type"] == "player_hit" {
+			// shooterId := wsMsg["shooter_id"].(string)
+			targetId := wsMsg["target_id"].(string)
+			damage := 20
+			bullet_x := wsMsg["bullet_x"].(float64)
+			bullet_y := wsMsg["bullet_y"].(float64)
+			if player, exists := rooms[roomId].Players[targetId]; exists{
+				player.Health -= damage
+				if player.Health <= 0{
+					player.Health = 0
+				}
+				response:= map[string]interface{}{
+					"type": "player_hit",
+					"target_id": targetId,
+					"health": player.Health,
+					"bullet_x": bullet_x,
+					"bullet_y": bullet_y,
+				}
+				game.BroadcastToPlayers(rooms[roomId].Players, response)
+			}
+		}
+		// fmt.Printf("rooms %v", rooms[roomId].Players); 
+		// for _, player := range rooms[roomId].Players {
+		// 	ws.WriteJSON(player)
+		// }
 	}
 	
 }
