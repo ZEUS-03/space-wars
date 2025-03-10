@@ -1,0 +1,25 @@
+@font-face {
+  font-family: "kenvector_future";
+  src: url("./public/assets/fonts/kenvector_future.ttf");
+}
+@font-face {
+  font-family: "kenvector_future_thin";
+  src: url("./public/assets/fonts/kenvector_future_thin.ttf");
+}
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: "kenvector_future", "kenvector_future_thin", Arial, Helvetica;
+}
+#game-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-size: cover;
+}
+canvas {
+  border: 3px solid white;
+  border-radius: 10px;
+}

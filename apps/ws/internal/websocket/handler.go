@@ -97,6 +97,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 					"y": rooms[roomId].Players[playerID].Position.Y,
 					"rotation": rooms[roomId].Players[playerID].Position.Rotation,
 					"health": rooms[roomId].Players[playerID].Health,
+					"score": rooms[roomId].Players[playerID].Score,
 			})
 		}
 	}	
@@ -171,22 +172,45 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			}	
 		}
 		if wsMsg["type"] == "player_hit" {
-			// shooterId := wsMsg["shooter_id"].(string)
+			shooterId := wsMsg["shooter_id"].(string)
 			targetId := wsMsg["target_id"].(string)
 			damage := 20
 			bullet_x := wsMsg["bullet_x"].(float64)
 			bullet_y := wsMsg["bullet_y"].(float64)
+			
 			if player, exists := rooms[roomId].Players[targetId]; exists{
+				var response map[string]interface{}
 				player.Health -= damage
+				var shooterScore int
 				if player.Health <= 0{
+					if shooter, shooterExists:= rooms[roomId].Players[shooterId]; shooterExists{
+						shooter.Score += 10
+						shooterScore = shooter.Score
+					}
 					player.Health = 0
-				}
-				response:= map[string]interface{}{
-					"type": "player_hit",
-					"target_id": targetId,
-					"health": player.Health,
-					"bullet_x": bullet_x,
-					"bullet_y": bullet_y,
+					response= map[string]interface{}{
+						"type": "player_hit",
+						"target_id": targetId,
+						"bullet_x": bullet_x,
+						"bullet_y": bullet_y,
+						"shooter_id": shooterId,
+						"health": player.Health,
+						"score": shooterScore,
+					}
+				}else{
+					if shooter, shooterExists:= rooms[roomId].Players[shooterId]; shooterExists{
+						shooter.Score += 5
+						shooterScore = shooter.Score
+					}
+					response= map[string]interface{}{
+						"type": "player_hit",
+						"target_id": targetId,
+						"health": player.Health,
+						"bullet_x": bullet_x,
+						"bullet_y": bullet_y,
+						"shooter_id": shooterId,
+						"score": shooterScore,
+					}
 				}
 				game.BroadcastToPlayers(rooms[roomId].Players, response)
 			}
