@@ -21,7 +21,6 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error upgrading to WebSocket:", err)
 		return
 	}
-	// fmt.Println("Response generated %s/n", r)
 	defer ws.Close()
 
 	fmt.Println("Client connected")
@@ -33,6 +32,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 	// Creating new room
 	room := game.CreateRoom(rooms, roomId)
+	game.AddAsteroids(room)
 
 	// Generating random player ID
 	playerID := uuid.New().String()
@@ -40,6 +40,11 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	// Creating new player in the room
 	game.AddPlayerToRoom(room, roomId, playerID, ws)
 
+	rooms[roomId].Players[playerID].Ws.WriteJSON(map[string]interface{}{
+		"type": "asteroids_position",
+		"positions": rooms[roomId].Asteroids,
+	})
+	
 	defer func() {
 		// Remove the player from the room
 		delete(room.Players, playerID)
@@ -62,7 +67,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	}()
 	
 	playerInitMessage := map[string]interface{}{
-		"type":      "player_id_assigned",
+		"type": "player_id_assigned",
 		"player_id": playerID,
 	}
 
@@ -76,7 +81,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	var newLocations = make(map[string]interface{})
 
 	newLocations["type"] = "all_players_position"
-	newLocations["data"] = locations	
+	newLocations["data"] = locations
 
 	// game.BroadcastToPlayers(room.Players, newLocations)
 
@@ -98,6 +103,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 					"rotation": rooms[roomId].Players[playerID].Position.Rotation,
 					"health": rooms[roomId].Players[playerID].Health,
 					"score": rooms[roomId].Players[playerID].Score,
+					"lifes": rooms[roomId].Players[playerID].Lifes,
 			})
 		}
 	}	
@@ -110,7 +116,6 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("Error reading message:", err)
 			delete(rooms[roomId].Players, playerID)
-			
 			break
 		}
 		var wsMsg map[string]interface{}
@@ -119,21 +124,20 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error unmarshalling message:", err)
 			continue
 		}
-
-		if wsMsg["type"] == "collision_detected" {
-			player1:= wsMsg["localPlayerId"].(string)
-			player2:= wsMsg["OtherPlayerId"].(string)
-
-			response:= map[string]interface{}{
-				"type": "collion_detected",
-				"player1": player1,
-				"health": 0,
-				"player2": player2,
+		if wsMsg["type"] == "collision_detected" {		
+			player1:= wsMsg["player1"].(string)
+			player2:= wsMsg["player2"].(string)
+		
+			if player_1, exists := rooms[roomId].Players[player1]; exists{
+				player_1.Lifes -= 1
+				game.ReSpawnPlayer(player_1, rooms[roomId])
 			}
-			game.BroadcastToPlayers(rooms[roomId].Players, response)
+			if player_2, exists := rooms[roomId].Players[player2]; exists{
+				player_2.Lifes -= 1
+				game.ReSpawnPlayer(player_2, rooms[roomId])
+			}
 		}
 
-		// fmt.Printf("Received: ", wsMsg["type"])
 		if wsMsg["type"] == "update_position" {
 			x := wsMsg["x"].(float64)
 			y := wsMsg["y"].(float64)
@@ -179,30 +183,26 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			bullet_y := wsMsg["bullet_y"].(float64)
 			
 			if player, exists := rooms[roomId].Players[targetId]; exists{
-				var response map[string]interface{}
 				player.Health -= damage
 				var shooterScore int
-				if player.Health <= 0{
+				if player.Health <= 0 {
 					if shooter, shooterExists:= rooms[roomId].Players[shooterId]; shooterExists{
 						shooter.Score += 10
 						shooterScore = shooter.Score
 					}
-					player.Health = 0
-					response= map[string]interface{}{
-						"type": "player_hit",
-						"target_id": targetId,
-						"bullet_x": bullet_x,
-						"bullet_y": bullet_y,
-						"shooter_id": shooterId,
-						"health": player.Health,
-						"score": shooterScore,
+					if(player.Lifes > 1){
+						player.Health = 100
+					}else{
+						player.Health = 0
 					}
-				}else{
+					player.Lifes -= 1
+					game.ReSpawnPlayer(player, rooms[roomId])
+				} else {
 					if shooter, shooterExists:= rooms[roomId].Players[shooterId]; shooterExists{
 						shooter.Score += 5
 						shooterScore = shooter.Score
 					}
-					response= map[string]interface{}{
+					response := map[string]interface{}{
 						"type": "player_hit",
 						"target_id": targetId,
 						"health": player.Health,
@@ -210,15 +210,30 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 						"bullet_y": bullet_y,
 						"shooter_id": shooterId,
 						"score": shooterScore,
+						"lifes": player.Lifes,
 					}
+					game.BroadcastToPlayers(rooms[roomId].Players, response)
+				}
+			}
+		}
+		if wsMsg["type"] == "player_hit_asteroid" {
+			playerId := wsMsg["playerId"].(string)
+			if player, exists := rooms[roomId].Players[playerId]; exists{
+				if(player.Lifes > 1){
+					player.Health = 100
+				}else{
+					player.Health = 0
+				}
+				player.Lifes -= 1
+				response := map[string]interface{}{
+					"type": "player_hit_asteroid",
+					"playerId": playerId,
+					"health": player.Health,
+					"lifes": player.Lifes,
 				}
 				game.BroadcastToPlayers(rooms[roomId].Players, response)
 			}
 		}
-		// fmt.Printf("rooms %v", rooms[roomId].Players); 
-		// for _, player := range rooms[roomId].Players {
-		// 	ws.WriteJSON(player)
-		// }
 	}
 	
 }

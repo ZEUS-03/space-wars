@@ -8,6 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "nodemon": "^3.1.9",
     "prettier": "^3.2.5",
     "turbo": "^2.2.3",
     "typescript": "5.5.4"
@@ -22,7 +23,6 @@
   ],
   "dependencies": {
     "express": "^4.21.1",
-    "nodemon": "^3.1.7",
     "prisma": "^5.22.0",
     "wscat": "^6.0.1"
   }

@@ -1,4 +1,14 @@
-import { updateScore } from "../utils/utils.js";
+import {
+  updateScore,
+  updateLifes,
+  destroyPlayer,
+  spawnPlayer,
+  updateContainerPosition,
+  sendMessage,
+} from "../utils/utils.js";
+import { createAsteroids } from "../ui/asteroids.js";
+import { addOtherPlayers, addPlayer, updateHealthBar } from "../ui/player.js";
+import { renderBullet, shootBullet } from "../ui/bullet.js";
 
 const PLAY_AREA = {
   x: 20, // Left boundary
@@ -37,6 +47,96 @@ function preload() {
     "/apps/frontend/public/assets/enemyBlack3.png"
   );
   this.load.image("bullet", "/apps/frontend/public/assets/bullet.png");
+
+  // Loading player life images
+
+  this.load.image(
+    "localPlayerLife",
+    "/apps/frontend/public/assets/PNG/UI/playerLife3_blue.png"
+  );
+  this.load.image(
+    "otherPlayerLife",
+    "/apps/frontend/public/assets/PNG/UI/playerLife1_red.png"
+  );
+  this.load.image(
+    "crossImage",
+    "/apps/frontend/public/assets/PNG/UI/numeralX.png"
+  );
+  this.load.image(
+    "numeral0",
+    "/apps/frontend/public/assets/PNG/UI/numeral0.png"
+  );
+  this.load.image(
+    "numeral1",
+    "/apps/frontend/public/assets/PNG/UI/numeral1.png"
+  );
+  this.load.image(
+    "numeral2",
+    "/apps/frontend/public/assets/PNG/UI/numeral2.png"
+  );
+  this.load.image(
+    "numeral3",
+    "/apps/frontend/public/assets/PNG/UI/numeral3.png"
+  );
+
+  // Loading planet images
+  this.load.image(
+    "planet1",
+    "/apps/frontend/public/assets/PNG/Meteors/planet1.png"
+  );
+  this.load.image(
+    "planet2",
+    "/apps/frontend/public/assets/PNG/Meteors/planet2.png"
+  );
+
+  this.load.image(
+    "planet3",
+    "/apps/frontend/public/assets/PNG/Meteors/planet6.png"
+  );
+  this.load.image(
+    "planet4",
+    "/apps/frontend/public/assets/PNG/Meteors/planet4.png"
+  );
+  this.load.image(
+    "planet5",
+    "/apps/frontend/public/assets/PNG/Meteors/planet5.png"
+  );
+
+  // Loading asteroids
+  this.load.image(
+    "asteroid1",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_big3.png"
+  );
+
+  this.load.image(
+    "asteroid2",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_big4.png"
+  );
+
+  this.load.image(
+    "asteroid3",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_med1.png"
+  );
+  this.load.image(
+    "asteroid4",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_med3.png"
+  );
+  this.load.image(
+    "asteroid5",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_small1.png"
+  );
+  this.load.image(
+    "asteroid6",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_small2.png"
+  );
+  this.load.image(
+    "asteroid7",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_tiny1.png"
+  );
+  this.load.image(
+    "asteroid8",
+    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_tiny2.png"
+  );
 }
 function create() {
   var self = this;
@@ -45,8 +145,8 @@ function create() {
   this.otherPlayers = this.physics.add.group();
   this.bullet = this.physics.add.group();
   this.socket = new WebSocket(
-    // "https://space-war.onrender.com/ws?room_id=room123"
-    "ws://localhost:8080/ws?room_id=room123"
+    "https://space-war.onrender.com/ws?room_id=room123"
+    // "ws://localhost:8081/ws?room_id=room123"
   );
   this.socket.onopen = () => {
     console.log("WebSocket connection established");
@@ -78,6 +178,8 @@ function create() {
       }
     }
   });
+
+  this.physics.world.createDebugGraphic();
 }
 function update() {
   if (!this.ship || !this.ship.active) return;
@@ -93,7 +195,7 @@ function update() {
     if (this.cursors.up.isDown) {
       this.physics.velocityFromRotation(
         this.ship.rotation + 1.5,
-        100,
+        50,
         this.ship.body.acceleration
       );
     } else {
@@ -163,6 +265,11 @@ function handleEvent(self, data) {
         }
       });
       break;
+    case "asteroids_position":
+      if (!self.asteroids) {
+        createAsteroids(self, data?.positions);
+      }
+      break;
     case "player_connected":
       addOtherPlayers(self, data);
       break;
@@ -178,8 +285,7 @@ function handleEvent(self, data) {
     case "player_disconnected":
       self.otherPlayers.getChildren().forEach(function (otherPlayer) {
         if (data.player_id === otherPlayer.playerId) {
-          otherPlayer.destroy();
-          otherPlayer.container.destroy();
+          destroyPlayer(otherPlayer);
         }
       });
       break;
@@ -187,7 +293,6 @@ function handleEvent(self, data) {
       renderBullet(self, data);
       break;
     case "player_hit":
-      console.log(data);
       if (self.localPlayerId === data.target_id) {
         self.bullet.getChildren().forEach((bullet) => {
           if (
@@ -201,306 +306,92 @@ function handleEvent(self, data) {
             bullet.destroy();
           }
         });
+
         self.ship.health = data.health;
-        updateHealthBar(self, "player1", data.health);
-        if (self.ship.health <= 0) {
-          self.ship.destroy();
-          self.ship.container.destroy();
+        updateHealthBar(self.player1HealthBar, data.health);
+        if (self.ship.lifes != data.lifes) {
+          self.ship.lifes = data.lifes;
+          updateLifes(self, self.ship, data.lifes, self.player1LifesContainer);
         }
       } else {
         self.otherPlayers.getChildren().forEach((otherPlayer) => {
           if (data.target_id === otherPlayer.playerId) {
             otherPlayer.health = data.health;
-            updateHealthBar(self, "player2", data.health);
-            if (data.health <= 0) {
-              otherPlayer.destroy();
-              otherPlayer.container.destroy();
+            updateHealthBar(self.player2HealthBar, data.health);
+            if (otherPlayer.lifes != data.lifes) {
+              otherPlayer.lifes = data.lifes;
+              updateLifes(
+                self,
+                otherPlayer,
+                data.lifes,
+                self.player2LifesContainer
+              );
             }
           }
         });
       }
       updateScore(self, data?.shooter_id, data?.score);
       break;
-    case "collision_detected":
-      if (
-        self.localPlayerId === data.player1 ||
-        self.localPlayerId === data.player2
-      ) {
-        self.ship.setVelocity(0, 0);
-        self.ship.setAcceleration(0);
-        self.ship.setAngularVelocity(0);
-        self.ship.health = 0;
-        // updateHealthBar(self, self.ship, self.localPlayerId);
+
+    case "player_spawned":
+      if (self.localPlayerId === data.player.id) {
+        updateLifes(
+          self,
+          self.ship,
+          data.player.lifes,
+          self.player1LifesContainer
+        );
+        if (data.player.lifes > 0) {
+          spawnPlayer(self.ship, data.player, self.player1HealthBar);
+        } else {
+          destroyPlayer(self.ship);
+        }
+      } else {
+        const otherPlayer = self.otherPlayers
+          .getChildren()
+          .find((player) => player.playerId === data.player.id);
+        updateLifes(
+          self,
+          otherPlayer,
+          data.player.lifes,
+          self.player2LifesContainer
+        );
+        if (data.player.lifes > 0) {
+          spawnPlayer(otherPlayer, data.player, self.player2HealthBar);
+        } else {
+          destroyPlayer(otherPlayer);
+        }
       }
-  }
-}
-function addPlayer(self, playerInfo) {
-  self.ship = self.physics.add
-    .image(playerInfo.x, playerInfo.y, "ship")
-    .setOrigin(0.5, 0.5)
-    .setDisplaySize(53, 40);
-  self.ship.body.setSize(70, 70, false);
-  self.ship.health = 100;
-  self.ship.healthBar = self.add.graphics();
-  self.ship.container = self.add.container(playerInfo.x, playerInfo.y);
-  self.ship.container.add(self.ship.healthBar);
-  self.ship.score = 0;
-  createUIForLocalPlayer(self);
-  // updateHealthBar(self, self.ship, playerInfo.player_id);
-  self.ship.setCollideWorldBounds(true);
-  self.ship.setBounce(0);
-  self.ship.setMass(5);
-  self.ship.setDrag(200);
-  self.ship.setAngularDrag(150);
-  self.ship.setMaxVelocity(200);
-  self.playersGroup.add(self.ship);
+      break;
 
-  addTextID(self, self.ship.container, playerInfo);
-  self.ship.setDrag(100);
-  self.ship.setAngularDrag(100);
-  self.ship.setMaxVelocity(200);
-  if (self.ship) {
-    self.physics.add.collider(
-      self.ship,
-      self.playersGroup,
-      (player, otherPlayer) => {
-        player.setVelocity(0, 0);
-        player.setAcceleration(0);
-        player.setAngularVelocity(0);
-
-        otherPlayer.setVelocity(0, 0);
-        otherPlayer.setAcceleration(0);
-        otherPlayer.setAngularVelocity(0);
-
-        sendMessage(self, {
-          type: "collision_detected",
-          player2: otherPlayer,
-          player1: self.localPlayerId,
+    case "player_hit_asteroid":
+      if (self.localPlayerId === data.playerId) {
+        destroyPlayer(self.ship);
+        self.ship.health = data.health;
+        updateHealthBar(self.player1HealthBar, data.health);
+        if (self.ship.lifes != data.lifes) {
+          self.ship.lifes = data.lifes;
+          updateLifes(self, self.ship, data.lifes, self.player1LifesContainer);
+        }
+      } else {
+        self.otherPlayers.getChildren().forEach((otherPlayer) => {
+          if (data.playerId === otherPlayer.playerId) {
+            destroyPlayer(otherPlayer);
+            otherPlayer.health = data.health;
+            updateHealthBar(self.player2HealthBar, data.health);
+            if (otherPlayer.lifes != data.lifes) {
+              otherPlayer.lifes = data.lifes;
+              updateLifes(
+                self,
+                otherPlayer,
+                data.lifes,
+                self.player2LifesContainer
+              );
+            }
+          }
         });
       }
-    );
   }
 }
 
-function addOtherPlayers(self, playerInfo) {
-  const otherPlayer = self.physics.add
-    .image(playerInfo.x, playerInfo.y, "otherPlayer")
-    .setOrigin(0.5, 0.5)
-    .setDisplaySize(53, 40);
-  otherPlayer.body.setSize(70, 70, false);
-  otherPlayer.health = 100;
-  otherPlayer.healthBar = self.add.graphics();
-  otherPlayer.container = self.add.container(playerInfo.x, playerInfo.y);
-  otherPlayer.container.add(otherPlayer.healthBar);
-  // updateHealthBar(self, otherPlayer, playerInfo.player_id);
-  createUIForOtherPlayer(self);
-  otherPlayer.score = 0;
-  otherPlayer.setCollideWorldBounds(true);
-  otherPlayer.setBounce(0);
-  otherPlayer.setMass(5);
-  otherPlayer.setDrag(200);
-  otherPlayer.setAngularDrag(150);
-  otherPlayer.setMaxVelocity(200);
-  // otherPlayer.setPushable(true);
-  self.playersGroup.add(otherPlayer); // Add to physics group
-
-  addTextID(self, otherPlayer.container, playerInfo);
-  otherPlayer.playerId = playerInfo.player_id;
-  self.otherPlayers.add(otherPlayer);
-  self.physics.add.collider(
-    otherPlayer,
-    self.playersGroup,
-    (player, otherPlayer) => {
-      // Stop movement when colliding
-      player.setVelocity(0, 0);
-      player.setAcceleration(0);
-      player.setAngularVelocity(0);
-
-      otherPlayer.setVelocity(0, 0);
-      otherPlayer.setAcceleration(0);
-      otherPlayer.setAngularVelocity(0);
-
-      sendMessage(self, {
-        type: "collision_detected",
-        player2: otherPlayer,
-        player1: self.localPlayerId,
-      });
-    }
-  );
-}
-
-function addTextID(self, container, playerInfo) {
-  let playerIdText = self.add
-    .text(0, -30, playerInfo.player_id.slice(-4), {
-      fontSize: "14px",
-      fill: "#ffffff",
-      fontFamily: "Arial",
-      stroke: "#000",
-      strokeThickness: 3,
-    })
-    .setOrigin(0.5, 0.5);
-
-  container.add(playerIdText);
-}
-
-function shootBullet(self) {
-  if (!self.ship) return;
-  const bulletSpeed = 400;
-  let bullet = self.bullet.create(self.ship.x, self.ship.y, "bullet");
-  bullet.setRotation(self.ship.rotation);
-  self.physics.velocityFromRotation(
-    self.ship.rotation + Math.PI / 2,
-    bulletSpeed,
-    bullet.body.velocity
-  );
-
-  sendMessage(self, {
-    type: "bullet_fired",
-    id: self.localPlayerId,
-    x: self.ship.x,
-    y: self.ship.y,
-    rotation: self.ship.rotation,
-  });
-
-  bullet.setCollideWorldBounds(true);
-  self.physics.add.overlap(bullet, self.otherPlayers, (bullet, otherPlayer) => {
-    bullet.destroy();
-
-    sendMessage(self, {
-      type: "player_hit",
-      shooter_id: self.localPlayerId,
-      target_id: otherPlayer.playerId,
-      bullet_x: bullet.x,
-      bullet_y: bullet.y,
-    });
-  });
-
-  bullet.body.onWorldBounds = true;
-
-  bullet.body.world.on("worldbounds", (body) => {
-    if (body === bullet.body) {
-      bullet.destroy();
-    }
-  });
-}
-
-function renderBullet(self, data) {
-  const bulletSpeed = 400;
-  let bullet = self.bullet.create(data.x, data.y, "bullet");
-  if (bullet) {
-    // bullet.enableBody(true, data.x, data.y, true, true);
-    bullet.setRotation(data.rotation);
-    self.physics.velocityFromRotation(
-      data.rotation + Math.PI / 2,
-      bulletSpeed,
-      bullet.body.velocity
-    );
-  }
-}
-
-function sendMessage(self, message) {
-  if (self.socket && self.socket.readyState === WebSocket.OPEN) {
-    self.socket.send(JSON.stringify(message));
-  }
-}
-
-// For more than single player.
-
-// function updateHealthBar(self, player, player_id) {
-//   player.healthBar.clear();
-//   if (self.localPlayerId === player_id) {
-//     player.healthBar.fillStyle(0x0000ff, 1);
-//   } else {
-//     player.healthBar.fillStyle(0xff0000, 1);
-//   }
-//   player.healthBar.fillRect(-25, -40, player.health / 2, 5);
-// }
-
-function updateContainerPosition(player, x, y, rotation) {
-  player.container.setPosition(x, y);
-  player.container.setRotation(rotation);
-}
-
-function createUIForLocalPlayer(self) {
-  // Player 1 UI (Top-left)
-  self.player1ScoreText = self.add.text(20, 20, "Score: 0", {
-    font: "20px kenvector_future",
-    fill: "#0ff",
-  });
-  // .setShadow(2, 2, "#00f", 2);
-  let player1Health = createHealthBar(self, 20, 60);
-  self.player1HealthBar = player1Health.blocks;
-}
-
-function createUIForOtherPlayer(self) {
-  // Player 2 UI (Top-right)
-  self.player2ScoreText = self.add.text(
-    self.sys.game.config.width - 150,
-    20,
-    "Score: 0",
-    {
-      font: "20px kenvector_future",
-      fill: "#f00",
-    }
-  );
-  // .setShadow(2, 2, "#f00", 2);
-
-  let player2Health = createHealthBar(self, 1100, 60, true);
-  self.player2HealthBar = player2Health.blocks;
-}
-
-function createHealthBar(self, x, y, isRightAligned = false) {
-  let healthBarContainer = self.add.container(x, y);
-  let blockWidth = 10;
-  let gap = 3;
-  let totalBlocks = 10;
-  let blocks = [];
-
-  let totalWidth = totalBlocks * (blockWidth + gap) - gap;
-  let totalHeight = 18; // Slightly larger than blocks for the outline
-  // X position adjustments
-  let offsetX = isRightAligned ? -2 * totalWidth : 0;
-
-  // Outline rectangle (aligned with blocks)
-  let outlineX = totalWidth / 2 + offsetX;
-  let outline = self.add
-    .rectangle(
-      outlineX - 5,
-      0,
-      totalWidth + 5,
-      totalHeight,
-      0xffffff,
-      0 // Transparent inside
-    )
-    .setStrokeStyle(2, 0xffffff);
-  healthBarContainer.add(outline);
-
-  for (let i = 0; i < totalBlocks; i++) {
-    let blockX = (blockWidth + gap) * i + offsetX;
-    let block = self.add.rectangle(blockX, 0, blockWidth, 15, 0x00ff00);
-    blocks.push(block);
-    healthBarContainer.add(block);
-  }
-
-  return { container: healthBarContainer, blocks };
-}
-
-function updateHealthBar(self, playerKey, health) {
-  let blocks =
-    playerKey === "player1" ? self.player1HealthBar : self.player2HealthBar;
-  let remainingBlocks = Math.ceil((health / 100) * blocks.length);
-
-  blocks.forEach((block, index) => {
-    if (index < remainingBlocks) {
-      let color =
-        remainingBlocks > 6
-          ? 0x00ff00
-          : remainingBlocks > 3
-            ? 0xffa500
-            : 0xff0000;
-      block.setFillStyle(color);
-    } else {
-      block.setFillStyle(0x444444); // Dark gray for missing health
-    }
-  });
-}
+// TODO: add collision detection b/w bullets and asteroids

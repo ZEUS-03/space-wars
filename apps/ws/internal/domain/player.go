@@ -13,6 +13,7 @@ type Player struct {
 	Position Position `json:"position"`
 	Health int `json:"health"`
 	Score int `json:"score"`
+	Lifes int `json:"lifes"`
 	Ws *websocket.Conn
 }
 
