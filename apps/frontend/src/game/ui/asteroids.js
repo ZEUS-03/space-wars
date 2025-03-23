@@ -1,5 +1,10 @@
 export function createAsteroids(self, positions) {
   if (!self.asteroids) self.asteroids = self.physics.add.group();
+  self.physics.add.overlap(self.bullet, self.asteroids, (bullet, asteroid) => {
+    if (bullet && asteroid) {
+      bullet.destroy();
+    }
+  });
   const planetSizeMap = [
     { width: 80, height: 80 }, // planet1 (large)
     { width: 100, height: 100 }, // planet2 (large)

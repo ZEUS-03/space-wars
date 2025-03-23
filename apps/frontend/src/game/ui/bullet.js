@@ -34,6 +34,9 @@ export function shootBullet(self) {
   });
 
   bullet.setCollideWorldBounds(true);
+  // self.physics.add.overlap(bullet, self.asteroids, (bullet) => {
+  //   bullet.destroy();
+  // });
   self.physics.add.overlap(bullet, self.otherPlayers, (bullet, otherPlayer) => {
     bullet.destroy();
 

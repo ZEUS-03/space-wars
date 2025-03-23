@@ -24,7 +24,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 
 	fmt.Println("Client connected")
-
+	fmt.Println(r.URL.Query())
 	roomId := r.URL.Query().Get("room_id");
 	if roomId == "" {
 		roomId = "default"
@@ -219,21 +219,12 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		if wsMsg["type"] == "player_hit_asteroid" {
 			playerId := wsMsg["playerId"].(string)
 			if player, exists := rooms[roomId].Players[playerId]; exists{
-				if(player.Lifes > 1){
-					player.Health = 100
-				}else{
-					player.Health = 0
-				}
-				player.Lifes -= 1
-				response := map[string]interface{}{
-					"type": "player_hit_asteroid",
-					"playerId": playerId,
-					"health": player.Health,
-					"lifes": player.Lifes,
-				}
-				game.BroadcastToPlayers(rooms[roomId].Players, response)
+				player.Lifes--
+				game.ReSpawnPlayer(player, rooms[roomId])
 			}
 		}
 	}
 	
 }
+
+// TODO: Server connections to be stored in .env
