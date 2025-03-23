@@ -9,6 +9,7 @@ import {
 import { createAsteroids } from "../ui/asteroids.js";
 import { addOtherPlayers, addPlayer, updateHealthBar } from "../ui/player.js";
 import { renderBullet, shootBullet } from "../ui/bullet.js";
+import { BASE_PATH, METEOR_PATH, UI_PATH } from "../utils/constants.js";
 
 const PLAY_AREA = {
   x: 20, // Left boundary
@@ -37,106 +38,40 @@ const config = {
 };
 var game = new Phaser.Game(config);
 function preload() {
-  this.load.image(
-    "background",
-    "/apps/frontend/public/assets/images/black.png"
-  );
-  this.load.image("ship", "/apps/frontend/public/assets/playerShip3_blue.png");
-  this.load.image(
-    "otherPlayer",
-    "/apps/frontend/public/assets/enemyBlack3.png"
-  );
-  this.load.image("bullet", "/apps/frontend/public/assets/bullet.png");
+  this.load.image("background", `${BASE_PATH}images/black.png`);
+  this.load.image("ship", `${BASE_PATH}playerShip3_blue.png`);
+  this.load.image("otherPlayer", `${BASE_PATH}enemyBlack3.png`);
+  this.load.image("bullet", `${BASE_PATH}bullet.png`);
 
   // Loading player life images
 
-  this.load.image(
-    "localPlayerLife",
-    "/apps/frontend/public/assets/PNG/UI/playerLife3_blue.png"
-  );
-  this.load.image(
-    "otherPlayerLife",
-    "/apps/frontend/public/assets/PNG/UI/playerLife1_red.png"
-  );
-  this.load.image(
-    "crossImage",
-    "/apps/frontend/public/assets/PNG/UI/numeralX.png"
-  );
-  this.load.image(
-    "numeral0",
-    "/apps/frontend/public/assets/PNG/UI/numeral0.png"
-  );
-  this.load.image(
-    "numeral1",
-    "/apps/frontend/public/assets/PNG/UI/numeral1.png"
-  );
-  this.load.image(
-    "numeral2",
-    "/apps/frontend/public/assets/PNG/UI/numeral2.png"
-  );
-  this.load.image(
-    "numeral3",
-    "/apps/frontend/public/assets/PNG/UI/numeral3.png"
-  );
+  this.load.image("localPlayerLife", `${UI_PATH}playerLife3_blue.png`);
+  this.load.image("otherPlayerLife", `${UI_PATH}playerLife1_red.png`);
+  this.load.image("crossImage", `${UI_PATH}numeralX.png`);
+  this.load.image("numeral0", `${UI_PATH}numeral0.png`);
+  this.load.image("numeral1", `${UI_PATH}numeral1.png`);
+  this.load.image("numeral2", `${UI_PATH}numeral2.png`);
+  this.load.image("numeral3", `${UI_PATH}numeral3.png`);
 
   // Loading planet images
-  this.load.image(
-    "planet1",
-    "/apps/frontend/public/assets/PNG/Meteors/planet1.png"
-  );
-  this.load.image(
-    "planet2",
-    "/apps/frontend/public/assets/PNG/Meteors/planet2.png"
-  );
+  this.load.image("planet1", `${METEOR_PATH}planet1.png`);
+  this.load.image("planet2", `${METEOR_PATH}planet2.png`);
 
-  this.load.image(
-    "planet3",
-    "/apps/frontend/public/assets/PNG/Meteors/planet6.png"
-  );
-  this.load.image(
-    "planet4",
-    "/apps/frontend/public/assets/PNG/Meteors/planet4.png"
-  );
-  this.load.image(
-    "planet5",
-    "/apps/frontend/public/assets/PNG/Meteors/planet5.png"
-  );
+  this.load.image("planet3", `${METEOR_PATH}planet6.png`);
+  this.load.image("planet4", `${METEOR_PATH}planet4.png`);
+  this.load.image("planet5", `${METEOR_PATH}planet5.png`);
 
   // Loading asteroids
-  this.load.image(
-    "asteroid1",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_big3.png"
-  );
+  this.load.image("asteroid1", `${METEOR_PATH}meteorBrown_big3.png`);
 
-  this.load.image(
-    "asteroid2",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_big4.png"
-  );
+  this.load.image("asteroid2", `${METEOR_PATH}meteorBrown_big4.png`);
 
-  this.load.image(
-    "asteroid3",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_med1.png"
-  );
-  this.load.image(
-    "asteroid4",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_med3.png"
-  );
-  this.load.image(
-    "asteroid5",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_small1.png"
-  );
-  this.load.image(
-    "asteroid6",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_small2.png"
-  );
-  this.load.image(
-    "asteroid7",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_tiny1.png"
-  );
-  this.load.image(
-    "asteroid8",
-    "/apps/frontend/public/assets/PNG/Meteors/meteorBrown_tiny2.png"
-  );
+  this.load.image("asteroid3", `${METEOR_PATH}meteorBrown_med1.png`);
+  this.load.image("asteroid4", `${METEOR_PATH}meteorBrown_med3.png`);
+  this.load.image("asteroid5", `${METEOR_PATH}meteorBrown_small1.png`);
+  this.load.image("asteroid6", `${METEOR_PATH}meteorBrown_small2.png`);
+  this.load.image("asteroid7", `${METEOR_PATH}meteorBrown_tiny1.png`);
+  this.load.image("asteroid8", `${METEOR_PATH}meteorBrown_tiny2.png`);
 }
 function create() {
   var self = this;
@@ -178,8 +113,8 @@ function create() {
       }
     }
   });
-
-  this.physics.world.createDebugGraphic();
+  // Uncomment to show physics debug
+  // this.physics.world.createDebugGraphic();
 }
 function update() {
   if (!this.ship || !this.ship.active) return;
