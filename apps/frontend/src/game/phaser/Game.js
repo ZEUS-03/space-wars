@@ -36,6 +36,10 @@ const config = {
     update: update,
   },
 };
+
+const urlParams = new URLSearchParams(window.location.search);
+const roomId = urlParams.get("roomId") || "";
+
 var game = new Phaser.Game(config);
 function preload() {
   this.load.image("background", `${BASE_PATH}images/black.png`);
@@ -80,8 +84,8 @@ function create() {
   this.otherPlayers = this.physics.add.group();
   this.bullet = this.physics.add.group();
   this.socket = new WebSocket(
-    "https://space-war.onrender.com/ws?room_id=room123"
-    // "ws://localhost:8081/ws?room_id=room123"
+    `https://space-war.onrender.com/ws?room_id=${roomId}`
+    // `ws://localhost:8081/ws?room_id=${roomId}`
   );
   this.socket.onopen = () => {
     console.log("WebSocket connection established");
@@ -113,6 +117,7 @@ function create() {
       }
     }
   });
+
   // Uncomment to show physics debug
   // this.physics.world.createDebugGraphic();
 }
@@ -130,7 +135,7 @@ function update() {
     if (this.cursors.up.isDown) {
       this.physics.velocityFromRotation(
         this.ship.rotation + 1.5,
-        50,
+        100,
         this.ship.body.acceleration
       );
     } else {
@@ -328,5 +333,4 @@ function handleEvent(self, data) {
       }
   }
 }
-
-// TODO: add collision detection b/w bullets and asteroids
+// TODO: Dynamic room creation

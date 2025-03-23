@@ -178,7 +178,7 @@ export function addPlayer(self, playerInfo) {
         playerId: playerInfo.player_id,
         health: player.health,
       });
-      destroyPlayer(self.ship);
+      self.ship.setActive(false).setVisible(false);
     });
   }
 }

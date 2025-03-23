@@ -1,10 +1,10 @@
 @font-face {
   font-family: "kenvector_future";
-  src: url("./public/assets/fonts/kenvector_future.ttf");
+  src: url("../../public/assets/fonts/kenvector_future.ttf");
 }
 @font-face {
   font-family: "kenvector_future_thin";
-  src: url("./public/assets/fonts/kenvector_future_thin.ttf");
+  src: url("../../public/assets/fonts/kenvector_future_thin.ttf");
 }
 body {
   margin: 0;
