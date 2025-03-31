@@ -13,6 +13,7 @@ import (
 )
 
 var rooms = make(map[string]*domain.Room)
+var readyPlayers = make(map[string]bool)
 
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	// Upgrade initial HTTP connection to a WebSocket
@@ -221,6 +222,22 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			if player, exists := rooms[roomId].Players[playerId]; exists{
 				player.Lifes--
 				game.ReSpawnPlayer(player, rooms[roomId])
+			}
+		} // Track who clicked restart
+
+		if wsMsg["type"] == "player-ready" { 
+			playerId := wsMsg["playerId"].(string)
+
+			readyPlayers[playerId] = true // Mark player as ready
+			fmt.Println("Players ready: ", readyPlayers)
+
+			// Check if both players in the room are ready
+			if len(readyPlayers) >= 2 {
+				response := map[string]interface{}{
+					"type": "game-start",
+				}
+				game.BroadcastToPlayers(rooms[roomId].Players, response) 
+				readyPlayers = make(map[string]bool) 
 			}
 		}
 	}

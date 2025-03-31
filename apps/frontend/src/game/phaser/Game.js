@@ -10,6 +10,7 @@ import { createAsteroids } from "../ui/asteroids.js";
 import { addOtherPlayers, addPlayer, updateHealthBar } from "../ui/player.js";
 import { renderBullet, shootBullet } from "../ui/bullet.js";
 import { BASE_PATH, METEOR_PATH, UI_PATH } from "../utils/constants.js";
+import { showGameOverModal } from "../ui/common.js";
 
 const PLAY_AREA = {
   x: 20, // Left boundary
@@ -84,8 +85,8 @@ function create() {
   this.otherPlayers = this.physics.add.group();
   this.bullet = this.physics.add.group();
   this.socket = new WebSocket(
-    `https://space-war.onrender.com/ws?room_id=${roomId}`
-    // `ws://localhost:8081/ws?room_id=${roomId}`
+    // `https://space-war.onrender.com/ws?room_id=${roomId}`
+    `ws://localhost:8080/ws?room_id=${roomId}`
   );
   this.socket.onopen = () => {
     console.log("WebSocket connection established");
@@ -118,11 +119,20 @@ function create() {
     }
   });
 
+  document.getElementById("ready-btn").addEventListener("click", () => {
+    sendMessage(this, {
+      type: "player-ready",
+      playerId: self.localPlayerId,
+    });
+
+    // Disable button to prevent multiple clicks
+    document.getElementById("ready-btn").disabled = true;
+  });
   // Uncomment to show physics debug
   // this.physics.world.createDebugGraphic();
 }
 function update() {
-  if (!this.ship || !this.ship.active) return;
+  if (!this.ship || !this.ship.active || !this.playerCanMove) return;
   if (this.ship) {
     if (this.cursors.left.isDown) {
       this.ship.setAngularVelocity(-150);
@@ -192,6 +202,7 @@ function update() {
   }
 }
 function handleEvent(self, data) {
+  const otherPlayerGroup = self.otherPlayers.getChildren();
   switch (data.type) {
     case "player_id_assigned":
       self.localPlayerId = data.player_id;
@@ -214,7 +225,7 @@ function handleEvent(self, data) {
       addOtherPlayers(self, data);
       break;
     case "update_single_player_position":
-      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      otherPlayerGroup.forEach(function (otherPlayer) {
         if (data.player_id === otherPlayer.playerId) {
           otherPlayer.setRotation(data.rotation);
           otherPlayer.setPosition(data.x, data.y);
@@ -223,7 +234,7 @@ function handleEvent(self, data) {
       });
       break;
     case "player_disconnected":
-      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      otherPlayerGroup.forEach(function (otherPlayer) {
         if (data.player_id === otherPlayer.playerId) {
           destroyPlayer(otherPlayer);
         }
@@ -254,7 +265,7 @@ function handleEvent(self, data) {
           updateLifes(self, self.ship, data.lifes, self.player1LifesContainer);
         }
       } else {
-        self.otherPlayers.getChildren().forEach((otherPlayer) => {
+        otherPlayerGroup.forEach((otherPlayer) => {
           if (data.target_id === otherPlayer.playerId) {
             otherPlayer.health = data.health;
             updateHealthBar(self.player2HealthBar, data.health);
@@ -304,6 +315,30 @@ function handleEvent(self, data) {
       }
       break;
 
+    case "game-over":
+      if (self.localPlayerId === data.playerId) {
+        destroyPlayer(self.ship);
+        updateLifes(self, self.ship, 0, self.player1LifesContainer);
+        updateHealthBar(self.player1HealthBar, 0);
+      } else {
+        otherPlayerGroup.forEach((otherPlayer) => {
+          if (data.playerId === otherPlayer.playerId) {
+            destroyPlayer(otherPlayer);
+            updateLifes(self, otherPlayer, 0, self.player2LifesContainer);
+            updateHealthBar(self.player2HealthBar, 0);
+            return;
+          }
+        });
+      }
+      if (!self.modalShown) {
+        showGameOverModal(self, data.playerId);
+        self.modalShown = true;
+      }
+      break;
+    case "game-start":
+      document.getElementById("waiting-modal").style.display = "none";
+      self.playerCanMove = true;
+      break;
     case "player_hit_asteroid":
       if (self.localPlayerId === data.playerId) {
         destroyPlayer(self.ship);
@@ -314,7 +349,7 @@ function handleEvent(self, data) {
           updateLifes(self, self.ship, data.lifes, self.player1LifesContainer);
         }
       } else {
-        self.otherPlayers.getChildren().forEach((otherPlayer) => {
+        otherPlayerGroup.forEach((otherPlayer) => {
           if (data.playerId === otherPlayer.playerId) {
             destroyPlayer(otherPlayer);
             otherPlayer.health = data.health;
@@ -333,4 +368,3 @@ function handleEvent(self, data) {
       }
   }
 }
-// TODO: Dynamic room creation
