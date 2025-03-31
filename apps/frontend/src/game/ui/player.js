@@ -124,6 +124,7 @@ export function addTextID(self, container, playerInfo) {
 }
 
 export function addPlayer(self, playerInfo) {
+  document.getElementById("waiting-modal").style.display = "block";
   self.ship = self.physics.add
     .image(playerInfo.x, playerInfo.y, "ship")
     .setOrigin(0.5, 0.5)
@@ -135,6 +136,7 @@ export function addPlayer(self, playerInfo) {
   self.ship.container = self.add.container(playerInfo.x, playerInfo.y);
   self.ship.container.add(self.ship.healthBar);
   self.ship.score = 0;
+  self.playerCanMove = false;
   createUIForLocalPlayer(self);
   // updateHealthBar(self, self.ship, playerInfo.player_id);
   self.ship.setCollideWorldBounds(true);

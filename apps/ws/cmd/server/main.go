@@ -8,7 +8,7 @@ import (
 
 func main() {
 	http.HandleFunc("/ws", websocket.HandleConnections)
-	port := "8081"
+	port := "8080"
 	fmt.Printf("Server started on http://localhost:%s\n", port)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {

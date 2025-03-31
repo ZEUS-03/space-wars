@@ -117,6 +117,10 @@ func ReSpawnPlayer(player *domain.Player, room *domain.Room) {
 			"player": player,
 		})
 	} else {
-
+		BroadcastToPlayers(room.Players, map[string]interface{}{
+			"type": "game-over",
+			"playerId": player.ID,
+		})
 	}
 }
+
