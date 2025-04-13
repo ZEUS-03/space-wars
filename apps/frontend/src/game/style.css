@@ -48,3 +48,128 @@ canvas {
   border: 3px solid white;
   border-radius: 10px;
 }
+
+/* Navbar Styles */
+.navbar {
+  width: 100%;
+  background-color: #0a0a0a;
+  border-bottom: 2px solid #0ff;
+  padding: 12px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  color: #fff;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+  color: #0ff;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #0ff;
+}
+
+/* Mobile Responsive Nav */
+@media screen and (max-width: 600px) {
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .navbar-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .logo {
+    margin-bottom: 10px;
+  }
+}
+
+.how-to-play {
+  /* font-family: "Press Start 2P", cursive; */
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  background: #222;
+  color: #0ff;
+  padding: 1rem;
+  width: 200px;
+  border: 2px solid #0ff;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 #00a8b5;
+}
+.how-to-play h3 {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.how-to-play p {
+  font-size: 0.8rem;
+  margin: 4px 0;
+}
+
+/* Push game down to avoid overlap with navbar */
+body {
+  padding-top: 60px; /* Adjust if navbar height changes */
+}
+
+body {
+  background: radial-gradient(#000000, #0a0a0a);
+  overflow: hidden;
+}
+
+.starfield {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

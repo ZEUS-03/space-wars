@@ -38,8 +38,18 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	// Generating random player ID
 	playerID := uuid.New().String()
 
-	// Creating new player in the room
-	game.AddPlayerToRoom(room, roomId, playerID, ws)
+	// Creating new player in the room(2 players only limit)
+	fmt.Println("Players in room: ", len(room.Players))
+	if len(room.Players) < domain.MAX_PLAYERS {
+		game.AddPlayerToRoom(room, roomId, playerID, ws)
+	}else{
+		message := map[string]string{
+			"type": "room_full",
+			"message": "Room is full",
+		}
+		ws.WriteJSON(message)
+		ws.Close()
+	}
 
 	rooms[roomId].Players[playerID].Ws.WriteJSON(map[string]interface{}{
 		"type": "asteroids_position",

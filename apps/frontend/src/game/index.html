@@ -6,13 +6,38 @@
     <title>2D Metaverse Game</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
+
   <body>
+    <header class="navbar">
+      <div class="navbar-container">
+        <div class="logo">Space War 🚀</div>
+        <nav class="nav-links">
+          <a href="/">Home</a>
+          <a href="https://github.com/ZEUS-03/bombs-away" target="_blank"
+            >GitHub</a
+          >
+        </nav>
+      </div>
+    </header>
+    <div class="starfield" id="starfield"></div>
+
     <div id="waiting-modal" class="modal">
       <p>Waiting for players to join...</p>
       <button id="ready-btn">I'm Ready</button>
     </div>
+    <div id="room-full-modal" class="modal" style="display: none">
+      <p>Room is full</p>
+      <button id="go-back-btn">Go back!</button>
+    </div>
 
     <div id="game-container"></div>
+    <div class="how-to-play">
+      <h3>👾 How to Play 🕹</h3>
+      <p>⬆️ : Move Forward</p>
+      <p>⬅️ ➡️ : Rotate</p>
+      <p>Space : Shoot</p>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <script type="module" src="./phaser/Game.js"></script>
   </body>
