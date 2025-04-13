@@ -85,8 +85,8 @@ function create() {
   this.otherPlayers = this.physics.add.group();
   this.bullet = this.physics.add.group();
   this.socket = new WebSocket(
-    `https://space-war.onrender.com/ws?room_id=${roomId}`
-    // `ws://localhost:8080/ws?room_id=${roomId}`
+    // `https://space-war.onrender.com/ws?room_id=${roomId}`
+    `ws://localhost:8080/ws?room_id=${roomId}`
   );
   this.socket.onopen = () => {
     console.log("WebSocket connection established");
@@ -127,7 +127,13 @@ function create() {
 
     // Disable button to prevent multiple clicks
     document.getElementById("ready-btn").disabled = true;
+    document.getElementById("ready-btn").style.display = "none";
   });
+
+  document.getElementById("go-back-btn").addEventListener("click", () => {
+    window.location.href = "/";
+  });
+
   // Uncomment to show physics debug
   // this.physics.world.createDebugGraphic();
 }
@@ -204,6 +210,10 @@ function update() {
 function handleEvent(self, data) {
   const otherPlayerGroup = self.otherPlayers.getChildren();
   switch (data.type) {
+    case "room_full":
+      document.getElementById("waiting-modal").style.display = "none";
+      document.getElementById("room-full-modal").style.display = "block";
+      break;
     case "player_id_assigned":
       self.localPlayerId = data.player_id;
       break;
@@ -368,3 +378,15 @@ function handleEvent(self, data) {
       }
   }
 }
+function createStars(count = 100) {
+  const starfield = document.getElementById("starfield");
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement("div");
+    star.className = "star";
+    star.style.top = `${Math.random() * 100}%`;
+    star.style.left = `${Math.random() * 100}%`;
+    star.style.animationDelay = `${Math.random() * 3}s`;
+    starfield.appendChild(star);
+  }
+}
+createStars(150);

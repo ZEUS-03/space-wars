@@ -6,3 +6,4 @@ const (
 	MaxX                = 950
 	MaxY								= 750
 )
+const MAX_PLAYERS = 2
