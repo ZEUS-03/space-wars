@@ -85,8 +85,8 @@ function create() {
   this.otherPlayers = this.physics.add.group();
   this.bullet = this.physics.add.group();
   this.socket = new WebSocket(
-    // `https://space-war.onrender.com/ws?room_id=${roomId}`
-    `ws://localhost:8080/ws?room_id=${roomId}`
+    `https://space-war.onrender.com/ws?room_id=${roomId}`
+    // `ws://localhost:8080/ws?room_id=${roomId}`
   );
   this.socket.onopen = () => {
     console.log("WebSocket connection established");
