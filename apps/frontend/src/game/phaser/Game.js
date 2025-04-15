@@ -402,9 +402,9 @@ function createStars(count = 100) {
     starfield.appendChild(star);
   }
 }
-createStars(150);
 
 document.addEventListener("DOMContentLoaded", function () {
+  createStars(150);
   interval;
 });
 const loadingBar = document.querySelector(".loading-bar");

@@ -256,6 +256,16 @@ body {
   }
 }
 
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 @keyframes hover {
   0% {
     transform: translateY(0);
