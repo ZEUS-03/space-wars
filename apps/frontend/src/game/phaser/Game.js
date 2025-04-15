@@ -216,6 +216,19 @@ function handleEvent(self, data) {
       break;
     case "player_id_assigned":
       self.localPlayerId = data.player_id;
+      const loadingScreen = document.getElementById("loading-screen");
+      const loadingBar = document.querySelector(".loading-bar");
+      const loadingProgress = document.querySelector(".loading-progress");
+      clearInterval(interval);
+      loadingBar.style.width = 100 + "%";
+      loadingProgress.textContent = Math.round(100) + "%";
+
+      setTimeout(() => {
+        loadingScreen.classList.add("loaded");
+        setTimeout(() => {
+          loadingScreen.style.display = "none";
+        }, 1000);
+      }, 500);
       break;
     case "all_players_position":
       data?.data?.forEach((player) => {
@@ -389,4 +402,22 @@ function createStars(count = 100) {
     starfield.appendChild(star);
   }
 }
-createStars(150);
+
+document.addEventListener("DOMContentLoaded", function () {
+  createStars(150);
+  interval;
+});
+const loadingBar = document.querySelector(".loading-bar");
+const loadingProgress = document.querySelector(".loading-progress");
+let progress = 0;
+const interval = setInterval(() => {
+  progress += Math.random() * 5;
+
+  if (progress > 100) progress = 99;
+  loadingBar.style.width = progress + "%";
+  loadingProgress.textContent = Math.round(progress) + "%";
+
+  if (progress === 99) {
+    clearInterval(interval);
+  }
+}, 200);
