@@ -8,6 +8,10 @@ import (
 
 func main() {
 	http.HandleFunc("/ws", websocket.HandleConnections)
+	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "pong")
+	})
 	port := "8080"
 	fmt.Printf("Server started on http://localhost:%s\n", port)
 	err := http.ListenAndServe(":"+port, nil)
