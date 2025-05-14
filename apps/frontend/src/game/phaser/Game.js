@@ -11,6 +11,7 @@ import { addOtherPlayers, addPlayer, updateHealthBar } from "../ui/player.js";
 import { renderBullet, shootBullet } from "../ui/bullet.js";
 import { BASE_PATH, METEOR_PATH, UI_PATH } from "../utils/constants.js";
 import { showGameOverModal } from "../ui/common.js";
+import { baseURL } from "../../constants.js";
 
 const PLAY_AREA = {
   x: 20, // Left boundary
@@ -85,7 +86,7 @@ function create() {
   this.otherPlayers = this.physics.add.group();
   this.bullet = this.physics.add.group();
   this.socket = new WebSocket(
-    `https://space-war.onrender.com/ws?room_id=${roomId}`
+    `${baseURL}ws?room_id=${roomId}`
     // `ws://localhost:8080/ws?room_id=${roomId}`
   );
   this.socket.onopen = () => {
@@ -214,7 +215,7 @@ function handleEvent(self, data) {
       document.getElementById("waiting-modal").style.display = "none";
       document.getElementById("room-full-modal").style.display = "block";
       break;
-    case "player_id_assigned":
+    case "player_id_assigned": {
       self.localPlayerId = data.player_id;
       const loadingScreen = document.getElementById("loading-screen");
       const loadingBar = document.querySelector(".loading-bar");
@@ -230,6 +231,7 @@ function handleEvent(self, data) {
         }, 1000);
       }, 500);
       break;
+    }
     case "all_players_position":
       data?.data?.forEach((player) => {
         if (self.localPlayerId == player.player_id) {
@@ -411,13 +413,15 @@ const loadingBar = document.querySelector(".loading-bar");
 const loadingProgress = document.querySelector(".loading-progress");
 let progress = 0;
 const interval = setInterval(() => {
-  progress += Math.random() * 5;
-
-  if (progress > 100) progress = 99;
-  loadingBar.style.width = progress + "%";
-  loadingProgress.textContent = Math.round(progress) + "%";
-
-  if (progress === 99) {
+  let randomNumber = Math.random() * 5;
+  if (progress + randomNumber < 99) {
+    progress += randomNumber;
+  } else {
+    progress = 99;
+    document.getElementById("loading-text").innerText =
+      "Waking up the server. This may take a minute...";
     clearInterval(interval);
   }
+  loadingBar.style.width = progress + "%";
+  loadingProgress.textContent = Math.round(progress) + "%";
 }, 200);
