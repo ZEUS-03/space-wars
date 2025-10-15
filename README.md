@@ -1,81 +1,221 @@
-# Turborepo starter
+# 🚀 Space Wars - Real-Time Multiplayer Game
 
-This is an official starter Turborepo.
+> A fast-paced 2D multiplayer space combat game with real-time synchronization
 
-## Using this example
+[🎮 Play Live Demo](https://spacewars-gamma.vercel.app/) | [🎥 Watch Gameplay](https://www.loom.com/share/0f96f20d7b0841eb9d2021a84b80419c)
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## 🎯 The Challenge
+
+Building real-time multiplayer games requires handling:
+- **Low-latency communication** between multiple clients
+- **State synchronization** across all players
+- **Smooth gameplay** despite network delays
+- **Scalable architecture** for multiple concurrent game rooms
+
+I built Space Wars to solve these challenges using WebSockets and optimized game architecture.
+
+---
+
+## ✨ Features
+
+### 🎮 Gameplay
+- **Real-time multiplayer combat** with smooth movement and shooting
+- **Dynamic room system** - create or join game sessions
+- **Player synchronization** - see other players move in real-time
+- **Combat mechanics** - health, shooting, respawning
+- **Interactive game world** - obstacles, power-ups, and boundaries
+
+### 🛠️ Technical Features
+- **WebSocket communication** for instant event propagation
+- **Client-side prediction** for responsive controls
+- **Server reconciliation** to prevent cheating
+- **Optimized network protocol** - minimal bandwidth usage
+- **Room-based architecture** - isolated game instances
+- **Graceful disconnection handling**
+
+---
+
+## ⚠️ Known Limitations (Free Tier Hosting)
+
+### Cold Start Delay
+The backend is hosted on Render's free tier, which spins down after 15 minutes of inactivity.
+
+**What this means:**
+- First connection after inactivity takes 30-60 seconds to wake up the server.
+- You may see "Loading" screen stuck at 90% - just wait and refresh.
+- Players getting disconnected in between games.
+- Once active, the game runs smoothly with <50ms latency.
+
+## 🖼️ Screenshots
+
+### Main Menu
+<img width="450" height="250" alt="image" src="https://github.com/user-attachments/assets/58223832-4548-4e0a-9db9-83a718e7c09c" />
+
+*Create or join multiplayer rooms*
+
+### Gameplay
+<img width="450" height="250" alt="image" src="https://github.com/user-attachments/assets/211c6fba-0a03-4b32-85ae-2c9b2c5ef497" />
+
+*Real-time combat with multiple players*
+
+---
+
+## 🏗️ Architecture
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Client (Browser)                    │
+│  ┌──────────────┐  ┌─────────────┐  ┌──────────────┐    │
+│  │   React UI   │  │  Phaser.js  │  │   WebSocket  │    │
+│  │   (Lobby)    │  │   (Game)    │  │    Client    │    │
+│  └──────────────┘  └─────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           │ WebSocket Connection
+                           │ (bidirectional, real-time)
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│                   Golang Backend                       │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │            WebSocket Handler                     │  │
+│  │  • Connection management                         │  │
+│  │  • Event routing                                 │  │
+│  └──────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │            Room Manager                          │  │
+│  │  • Dynamic room creation/deletion                │  │
+│  │  • Player assignment                             │  │
+│  │  • Room state management                         │  │
+│  └──────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │            Game Engine                           │  │
+│  │  • Player position updates (60 tick/sec)         │  │
+│  │  • Collision detection                           │  │
+│  │  • Combat resolution                             │  │
+│  │  • State broadcasting                            │  │
+│  └──────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## 🔧 Tech Stack
 
-### Apps and Packages
+### Frontend
+![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react)
+![Phaser.js](https://img.shields.io/badge/Phaser.js-3.60-8B5FBF?logo=phaser)
+![Tailwind](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=tailwind)
+![Vite](https://img.shields.io/badge/Vite-4.3-646CFF?logo=vite)
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- **React.js** - UI components and routing
+- **Phaser.js** - 2D game engine for rendering and physics
+- **WebSocket API** - Real-time bidirectional communication
+- **Vite** - Fast development and optimized builds
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### Backend
+![Go](https://img.shields.io/badge/Go-1.21-00ADD8?logo=go)
+![Gorilla](https://img.shields.io/badge/Gorilla-WebSocket-00ACD7)
 
-### Utilities
+- **Golang** - High-performance concurrent backend
+- **Gorilla WebSocket** - WebSocket implementation
+- **Concurrent design** - Goroutines for each game room
+- **Channels** - Safe communication between goroutines
 
-This Turborepo has some additional tools already setup for you:
+### Deployment
+![Netlify](https://img.shields.io/badge/Netlify-Frontend-00C7B7?logo=netlify)
+![Railway](https://img.shields.io/badge/Railway-Backend-0B0D0E?logo=railway)
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+---
 
-### Build
 
-To build all apps and packages, run the following command:
 
-```
-cd my-turborepo
-pnpm build
-```
+## 🧠 What I Learned
 
-### Develop
+### Technical Skills
+- **WebSocket protocol** and real-time communication patterns
+- **Game networking** concepts (client prediction, lag compensation)
+- **Golang concurrency** with goroutines and channels
+- **Phaser.js** game engine and 2D rendering
+- **State management** in multiplayer environments
 
-To develop all apps and packages, run the following command:
+### System Design
+- **Scalable architecture** for concurrent game sessions
+- **Event-driven design** for decoupled components
+- **Network optimization** techniques
+- **Graceful error handling** in distributed systems
 
-```
-cd my-turborepo
-pnpm dev
-```
+### Challenges Overcome
+1. **Synchronization issues** - Solved with server authority + client prediction
+2. **Race conditions** - Fixed with proper mutex usage in Go
+3. **Network lag** - Mitigated with interpolation and dead reckoning
+4. **Memory leaks** - Implemented proper cleanup for disconnected players
 
-### Remote Caching
+---
 
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## 🚧 Future Enhancements
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup), then enter the following commands:
+- [ ] **Matchmaking system** - Auto-pair players by skill level
+- [ ] **Power-ups** - Health packs, weapon upgrades, shields
+- [ ] **Leaderboard** - Track wins, kills, deaths
+- [ ] **Multiple game modes** - Team battles, capture the flag
+- [ ] **Mobile support** - Touch controls for mobile devices
+- [ ] **Spectator mode** - Watch ongoing games
+- [ ] **Replay system** - Record and playback matches
+- [ ] **Custom skins** - Player customization
 
-```
-cd my-turborepo
-npx turbo login
-```
+---
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## 📝 Technical Decisions
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### Why Golang for Backend?
+- **Excellent concurrency** with goroutines (perfect for game rooms)
+- **High performance** and low latency
+- **Simple deployment** - single binary
+- **Built-in WebSocket support** via libraries
 
-```
-npx turbo link
-```
+### Why Phaser.js?
+- **Mature 2D game engine** with proven track record
+- **Good performance** with WebGL rendering
+- **Rich API** for physics, sprites, animations
+- **Large community** and documentation
 
-## Useful Links
+### Why WebSockets over HTTP?
+- **Bidirectional** real-time communication
+- **Low overhead** compared to HTTP polling
+- **Persistent connection** reduces latency
+- **Perfect for game state updates**
 
-Learn more about the power of Turborepo:
+---
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+## 👤 Author
+
+**Your Name**
+- Portfolio: [portfolio](https://gautamsharma.netlify.app)
+- LinkedIn: [@gautam1]((https://www.linkedin.com/in/gautam1/))
+- GitHub: [@ZEUS-03](https://github.com/ZEUS-03)
+- Email: futuristic.gautam@gmail.com
+
+---
+
+## 📄 License
+
+MIT License - feel free to use this project for learning!
+
+---
+
+## 🙏 Acknowledgments
+
+- **Phaser.js community** for excellent documentation
+- **Gorilla WebSocket** for robust WebSocket implementation
+- Inspiration from classic multiplayer games like Agar.io and Diep.io
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you found it interesting!**
+
+Made with ❤️ and lots of ☕
+
+</div>
