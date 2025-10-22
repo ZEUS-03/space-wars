@@ -2,7 +2,7 @@
 
 > A fast-paced 2D multiplayer space combat game with real-time synchronization
 
-[🎮 Play Live Demo](https://spacewars-gamma.vercel.app/) | [🎥 Watch Gameplay](https://www.loom.com/share/0f96f20d7b0841eb9d2021a84b80419c)
+[🎮 Play Live Demo](https://spacewars-gamma.vercel.app/) | https://www.loom.com/share/0f96f20d7b0841eb9d2021a84b80419c  [🎥 Watch Gameplay]
 
 ---
 
