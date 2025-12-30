@@ -41,6 +41,7 @@ const config = {
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get("roomId") || "";
+let loadingInterval = null;
 
 var game = new Phaser.Game(config);
 function preload() {
@@ -100,6 +101,15 @@ function create() {
   };
   this.socket.onclose = () => {
     console.log("WebSocket connection closed");
+  };
+  this.socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+    if (loadingInterval) {
+      clearInterval(loadingInterval);
+      loadingInterval = null;
+      clearTimeout(loadingTimeout);
+    }
+    document.getElementById("error-container").style.display = "flex";
   };
 
   this.cursors = this.input.keyboard.createCursorKeys();
@@ -220,9 +230,13 @@ function handleEvent(self, data) {
       const loadingScreen = document.getElementById("loading-screen");
       const loadingBar = document.querySelector(".loading-bar");
       const loadingProgress = document.querySelector(".loading-progress");
-      clearInterval(interval);
       loadingBar.style.width = 100 + "%";
       loadingProgress.textContent = Math.round(100) + "%";
+      if (loadingInterval) {
+        clearInterval(loadingInterval);
+        loadingInterval = null;
+        clearTimeout(loadingTimeout);
+      }
 
       setTimeout(() => {
         loadingScreen.classList.add("loaded");
@@ -407,12 +421,12 @@ function createStars(count = 100) {
 
 document.addEventListener("DOMContentLoaded", function () {
   createStars(150);
-  interval;
+  loadingInterval;
 });
 const loadingBar = document.querySelector(".loading-bar");
 const loadingProgress = document.querySelector(".loading-progress");
 let progress = 0;
-const interval = setInterval(() => {
+loadingInterval = setInterval(() => {
   let randomNumber = Math.random() * 5;
   if (progress + randomNumber < 99) {
     progress += randomNumber;
@@ -420,8 +434,23 @@ const interval = setInterval(() => {
     progress = 99;
     document.getElementById("loading-text").innerText =
       "Waking up the server. This may take a minute...";
-    clearInterval(interval);
+    clearInterval(loadingInterval);
   }
   loadingBar.style.width = progress + "%";
   loadingProgress.textContent = Math.round(progress) + "%";
 }, 200);
+const MAX_LOADING_TIME = 60000; // 60 seconds
+
+const loadingTimeout = setTimeout(() => {
+  if (loadingInterval) {
+    clearInterval(loadingInterval);
+  }
+  document.getElementById("loading-text").innerText =
+    "Connection timeout. Please refresh the page.";
+
+  // Optionally add a retry button
+  const retryBtn = document.createElement("button");
+  retryBtn.textContent = "Retry";
+  retryBtn.onclick = () => window.location.reload();
+  document.querySelector(".loading-screen").appendChild(retryBtn);
+}, MAX_LOADING_TIME);

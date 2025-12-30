@@ -164,7 +164,7 @@ body {
   animation: twinkle 2s infinite ease-in-out;
 }
 
-#loading-screen {
+.loading-screen {
   position: fixed;
   top: 0;
   left: 0;
@@ -180,7 +180,7 @@ body {
   transition: opacity 0.8s ease;
 }
 
-#loading-screen.loaded {
+.loading-screen.loaded {
   opacity: 0;
 }
 
@@ -276,4 +276,27 @@ body {
   100% {
     transform: translateY(0);
   }
+}
+.error-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(#050e1c, #000);
+
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  transition: opacity 0.8s ease;
+}
+.error-class {
+  color: red;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  display: none;
 }

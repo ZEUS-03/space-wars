@@ -137,6 +137,8 @@ export function addPlayer(self, playerInfo) {
   self.ship.container.add(self.ship.healthBar);
   self.ship.score = 0;
   self.playerCanMove = false;
+  self.ship.hasCollidedThisFrame = false;
+
   createUIForLocalPlayer(self);
   // updateHealthBar(self, self.ship, playerInfo.player_id);
   self.ship.setCollideWorldBounds(true);
@@ -156,6 +158,9 @@ export function addPlayer(self, playerInfo) {
       self.ship,
       self.playersGroup,
       (player, otherPlayer) => {
+        if (player.hasCollidedThisFrame) return;
+        player.hasCollidedThisFrame = true;
+
         player.setVelocity(0, 0);
         player.setAcceleration(0);
         player.setAngularVelocity(0);
@@ -169,10 +174,15 @@ export function addPlayer(self, playerInfo) {
           player2: otherPlayer.playerId || "",
           player1: self.localPlayerId || "",
         });
+        self.time.delayedCall(1000, () => {
+          player.hasCollidedThisFrame = false;
+        });
       }
     );
     self.physics.add.collider(self.ship, self.asteroids, (player, asteroid) => {
-      // Example: Reduce health on collision
+      if (player.hasCollidedThisFrame) return;
+      player.hasCollidedThisFrame = true;
+      // Reduce health on collision
       player.health -= 50;
 
       sendMessage(self, {
@@ -181,6 +191,9 @@ export function addPlayer(self, playerInfo) {
         health: player.health,
       });
       self.ship.setActive(false).setVisible(false);
+      self.time.delayedCall(1000, () => {
+        player.hasCollidedThisFrame = false;
+      });
     });
   }
 }
@@ -209,26 +222,6 @@ export function addOtherPlayers(self, playerInfo) {
   addTextID(self, otherPlayer.container, playerInfo);
   otherPlayer.playerId = playerInfo.player_id;
   self.otherPlayers.add(otherPlayer);
-  self.physics.add.collider(
-    otherPlayer,
-    self.playersGroup,
-    (player, otherPlayer) => {
-      // Stop movement when colliding
-      player.setVelocity(0, 0);
-      player.setAcceleration(0);
-      player.setAngularVelocity(0);
-
-      otherPlayer.setVelocity(0, 0);
-      otherPlayer.setAcceleration(0);
-      otherPlayer.setAngularVelocity(0);
-
-      sendMessage(self, {
-        type: "collision_detected",
-        player2: otherPlayer.playerId || "",
-        player1: self.localPlayerId || "",
-      });
-    }
-  );
 }
 
 // For more than two players.
