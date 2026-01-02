@@ -277,6 +277,31 @@ body {
     transform: translateY(0);
   }
 }
+
+button {
+  padding: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.join-button {
+  margin-top: 10px;
+  background: #4cc9f0;
+  color: #16213e;
+}
+
+.join-button:hover:not(:disabled) {
+  background: #3db5db;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(76, 201, 240, 0.3);
+}
+
 .error-container {
   position: fixed;
   top: 0;

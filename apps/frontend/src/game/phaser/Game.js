@@ -439,7 +439,7 @@ loadingInterval = setInterval(() => {
   loadingBar.style.width = progress + "%";
   loadingProgress.textContent = Math.round(progress) + "%";
 }, 200);
-const MAX_LOADING_TIME = 60000; // 60 seconds
+const MAX_LOADING_TIME = 50000; // 60 seconds
 
 const loadingTimeout = setTimeout(() => {
   if (loadingInterval) {
@@ -448,9 +448,10 @@ const loadingTimeout = setTimeout(() => {
   document.getElementById("loading-text").innerText =
     "Connection timeout. Please refresh the page.";
 
-  // Optionally add a retry button
+  // Add a retry button
   const retryBtn = document.createElement("button");
   retryBtn.textContent = "Retry";
+  retryBtn.className = "join-button";
   retryBtn.onclick = () => window.location.reload();
   document.querySelector(".loading-screen").appendChild(retryBtn);
 }, MAX_LOADING_TIME);
