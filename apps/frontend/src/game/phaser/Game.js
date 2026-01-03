@@ -324,30 +324,20 @@ function handleEvent(self, data) {
       break;
 
     case "player_spawned":
-      if (self.localPlayerId === data.player.id) {
-        updateLifes(
-          self,
-          self.ship,
-          data.player.lifes,
-          self.player1LifesContainer
-        );
-        if (data.player.lifes > 0) {
-          spawnPlayer(self.ship, data.player, self.player1HealthBar);
+      if (self.localPlayerId === data.player_id) {
+        updateLifes(self, self.ship, data.lifes, self.player1LifesContainer);
+        if (data.lifes > 0) {
+          spawnPlayer(self.ship, data, self.player1HealthBar);
         } else {
           destroyPlayer(self.ship);
         }
       } else {
         const otherPlayer = self.otherPlayers
           .getChildren()
-          .find((player) => player.playerId === data.player.id);
-        updateLifes(
-          self,
-          otherPlayer,
-          data.player.lifes,
-          self.player2LifesContainer
-        );
-        if (data.player.lifes > 0) {
-          spawnPlayer(otherPlayer, data.player, self.player2HealthBar);
+          .find((player) => player.playerId === data.player_id);
+        updateLifes(self, otherPlayer, data.lifes, self.player2LifesContainer);
+        if (data.lifes > 0) {
+          spawnPlayer(otherPlayer, data, self.player2HealthBar);
         } else {
           destroyPlayer(otherPlayer);
         }

@@ -60,9 +60,9 @@ export function spawnPlayer(player, playerInfo, playerHealthToUpdate) {
   player.setAngularVelocity(0);
 
   // Set new position
-  player.setPosition(playerInfo.position.x, playerInfo.position.y);
-  player.container.setPosition(playerInfo.position.x, playerInfo.position.y);
-  player.setRotation(playerInfo.position.rotation);
+  player.setPosition(playerInfo.x, playerInfo.y);
+  player.container.setPosition(playerInfo.x, playerInfo.y);
+  player.setRotation(playerInfo.rotation);
 
   // Update properties
   player.Health = playerInfo.health;
