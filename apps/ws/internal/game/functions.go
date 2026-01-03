@@ -35,23 +35,24 @@ func CreateRoom(rooms map[string]*domain.Room, roomID string) *domain.Room{
 func AddPlayerToRoom(room *domain.Room, roomId string, playerId string, ws*websocket.Conn) {
 	room.Mutex.Lock()
 	defer room.Mutex.Unlock()
-	x, y := generateSpawnPlayerPosition(room.Asteroids)
+	x, y := GenerateSpawnPlayerPosition(room.Asteroids)
 	fmt.Printf("Player %s spawned at %f, %f\n", playerId, x, y)
-	room.Players[playerId] = 
-		&domain.Player{
-			ID: playerId, 
-			Health: 100, 
-			Score: 0, 
-			Lifes: 3,
-			Position: domain.Position{X: float64(x), 
-				Y: float64(y), 
-				Rotation: 0,
-				}, 
-			Ws: ws,
-		}
+	player := &domain.Player{
+        ID:       playerId,
+        Health:   100,
+        Score:    0,
+        Lifes:    3,
+        Position: domain.Position{X: float64(x), Y: float64(y), Rotation: 0},
+        Ws:       ws,
+        Send:     make(chan map[string]interface{}, 256), // Buffered channel
+    }
+	room.Players[playerId] = player
+	// Start the write pump goroutine
+  go StartWritePump(player)
+
 }
 
-func generateSpawnPlayerPosition(asteroids []*domain.Asteroid)(float64, float64) {
+func GenerateSpawnPlayerPosition(asteroids []*domain.Asteroid)(float64, float64) {
 	var x, y float64
 	isValidPosition := false
 
@@ -107,20 +108,44 @@ func generateAsteroids(count int) []*domain.Asteroid {
 
 func ReSpawnPlayer(player *domain.Player, room *domain.Room) { 
 	if player.Lifes > 0 {
-		x, y := generateSpawnPlayerPosition(room.Asteroids)
+		x, y := GenerateSpawnPlayerPosition(room.Asteroids)
 		player.Health = 100
 		player.Position.X = x
 		player.Position.Y = y
 		player.Position.Rotation = 0
 		BroadcastToPlayers(room.Players, map[string]interface{}{
-			"type": "player_spawned",
-			"player": player,
+			"type":     "player_spawned",
+			"player_id": player.ID,
+			"x":        player.Position.X,
+			"y":        player.Position.Y,
+			"rotation": player.Position.Rotation,
+			"health":   player.Health,
+			"lifes":    player.Lifes,
+			"score":    player.Score,
 		})
+
 	} else {
 		BroadcastToPlayers(room.Players, map[string]interface{}{
 			"type": "game-over",
 			"playerId": player.ID,
 		})
 	}
+}
+
+func StartWritePump(player *domain.Player) {
+    defer func() {
+        player.Ws.Close()
+    }()
+    
+    for message := range player.Send {
+        player.WriteMu.Lock()
+        err := player.Ws.WriteJSON(message)
+        player.WriteMu.Unlock()
+        
+        if err != nil {
+            fmt.Println("Error writing message:", err)
+            return
+        }
+    }
 }
 

@@ -26,7 +26,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Client connected")
 	fmt.Println(r.URL.Query())
-	roomId := r.URL.Query().Get("room_id");
+	roomId := r.URL.Query().Get("room_id")
 	if roomId == "" {
 		roomId = "default"
 	}
@@ -42,108 +42,108 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Players in room: ", len(room.Players))
 	if len(room.Players) < domain.MAX_PLAYERS {
 		game.AddPlayerToRoom(room, roomId, playerID, ws)
-	}else{
-		message := map[string]string{
-			"type": "room_full",
+	} else {
+		message := map[string]interface{}{
+			"type":    "room_full",
 			"message": "Room is full",
 		}
-		ws.WriteJSON(message)
+		ws.WriteJSON(message) // Direct write before player is created
 		ws.Close()
+		return
 	}
 
-	rooms[roomId].Players[playerID].Ws.WriteJSON(map[string]interface{}{
-		"type": "asteroids_position",
+	// Send asteroid positions
+	rooms[roomId].Players[playerID].Send <- map[string]interface{}{
+		"type":      "asteroids_position",
 		"positions": rooms[roomId].Asteroids,
-	})
-	
+	}
+
 	defer func() {
+		// Close the send channel
+		if player, exists := room.Players[playerID]; exists {
+			close(player.Send)
+		}
+
 		// Remove the player from the room
 		delete(room.Players, playerID)
 
 		// Notify remaining players
 		for _, p := range room.Players {
-			err := p.Ws.WriteJSON(map[string]interface{}{
+			select {
+			case p.Send <- map[string]interface{}{
 				"type":      "player_disconnected",
 				"player_id": playerID,
-			})
-			if err != nil {
-				fmt.Println("Error notifying players of disconnection:", err)
+			}:
+				// Message sent
+			default:
+				fmt.Println("Error notifying players of disconnection")
 			}
 		}
 
-		// If the room is empty, delete it
+		// Delete empty room
 		if len(room.Players) == 0 {
 			delete(rooms, roomId)
 		}
 	}()
-	
+
+	// Send player ID
 	playerInitMessage := map[string]interface{}{
-		"type": "player_id_assigned",
+		"type":      "player_id_assigned",
 		"player_id": playerID,
 	}
+	rooms[roomId].Players[playerID].Send <- playerInitMessage
 
-	if err := ws.WriteJSON(playerInitMessage); err != nil {
-		fmt.Println("Error sending player ID:", err)
-		return
-	}
-
-	locations := game.GetPlayerLocations(rooms, roomId);
-
-	var newLocations = make(map[string]interface{})
-
+	// Send all player locations
+	locations := game.GetPlayerLocations(rooms, roomId)
+	newLocations := make(map[string]interface{})
 	newLocations["type"] = "all_players_position"
 	newLocations["data"] = locations
-
-	// game.BroadcastToPlayers(room.Players, newLocations)
-
-	if err := ws.WriteJSON(newLocations); err != nil {
-		fmt.Println("Error sending player ID:", err)
-		return
-	}
+	rooms[roomId].Players[playerID].Send <- newLocations
 
 	fmt.Printf("Player %s connected to room %s\n", playerID, roomId)
 
+	// Notify other players about new player
 	for _, player := range rooms[roomId].Players {
 		if player.ID != playerID {
-			// fmt.Printf("Sending player %s", player.ID)
-			player.Ws.WriteJSON(map[string]interface{}{
-					"type": "player_connected",
-					"player_id": playerID,
-					"x": rooms[roomId].Players[playerID].Position.X,
-					"y": rooms[roomId].Players[playerID].Position.Y,
-					"rotation": rooms[roomId].Players[playerID].Position.Rotation,
-					"health": rooms[roomId].Players[playerID].Health,
-					"score": rooms[roomId].Players[playerID].Score,
-					"lifes": rooms[roomId].Players[playerID].Lifes,
-			})
+			player.Send <- map[string]interface{}{
+				"type":      "player_connected",
+				"player_id": playerID,
+				"x":         rooms[roomId].Players[playerID].Position.X,
+				"y":         rooms[roomId].Players[playerID].Position.Y,
+				"rotation":  rooms[roomId].Players[playerID].Position.Rotation,
+				"health":    rooms[roomId].Players[playerID].Health,
+				"score":     rooms[roomId].Players[playerID].Score,
+				"lifes":     rooms[roomId].Players[playerID].Lifes,
+			}
 		}
-	}	
+	}
 
 	// Handle communication
 	for {
 		// Read message from the client
-		
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			fmt.Println("Error reading message:", err)
 			delete(rooms[roomId].Players, playerID)
 			break
 		}
+		
 		var wsMsg map[string]interface{}
 		err = json.Unmarshal(msg, &wsMsg)
 		if err != nil {
 			fmt.Println("Error unmarshalling message:", err)
 			continue
 		}
-		if wsMsg["type"] == "collision_detected" {		
-			player1:= wsMsg["player1"].(string)
-			player2:= wsMsg["player2"].(string)
-		
-			if player_1, exists := rooms[roomId].Players[player1]; exists{
+
+		if wsMsg["type"] == "collision_detected" {
+			player1 := wsMsg["player1"].(string)
+			player2 := wsMsg["player2"].(string)
+
+			if player_1, exists := rooms[roomId].Players[player1]; exists {
 				player_1.Lifes -= 1
 				game.ReSpawnPlayer(player_1, rooms[roomId])
 			}
-			if player_2, exists := rooms[roomId].Players[player2]; exists{
+			if player_2, exists := rooms[roomId].Players[player2]; exists {
 				player_2.Lifes -= 1
 				game.ReSpawnPlayer(player_2, rooms[roomId])
 			}
@@ -154,91 +154,95 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			y := wsMsg["y"].(float64)
 			rotation := wsMsg["rotation"].(float64)
 			rooms[roomId].Players[playerID].Position = domain.Position{X: x, Y: y, Rotation: rotation}
+			
 			for _, p := range rooms[roomId].Players {
-				err := p.Ws.WriteJSON(map[string]interface{}{
-						"type":    "update_single_player_position",
-						"player_id": playerID,
-						"x":       x,
-						"y":       y,
-						"rotation": rotation,
-				})
-				if err != nil {
-						fmt.Println("Error broadcasting position:", err)
+				select {
+				case p.Send <- map[string]interface{}{
+					"type":      "update_single_player_position",
+					"player_id": playerID,
+					"x":         x,
+					"y":         y,
+					"rotation":  rotation,
+				}:
+					// Message sent
+				default:
+					fmt.Println("Error broadcasting position")
 				}
 			}
 		}
 
 		if wsMsg["type"] == "bullet_fired" {
-			x:= wsMsg["x"].(float64)
-			y:= wsMsg["y"].(float64)
-			playerID := wsMsg["id"].(string)
+			x := wsMsg["x"].(float64)
+			y := wsMsg["y"].(float64)
+			bulletPlayerID := wsMsg["id"].(string)
 			rotation := wsMsg["rotation"].(float64)
 
 			for _, player := range rooms[roomId].Players {
-				if player.ID != playerID {
-					player.Ws.WriteJSON(map[string]interface{}{
-							"type": "bullet_fired",
-							"player_id": playerID,
-							"x": x,
-							"y": y,
-							"rotation": rotation,
-					})
+				if player.ID != bulletPlayerID {
+					player.Send <- map[string]interface{}{
+						"type":      "bullet_fired",
+						"player_id": bulletPlayerID,
+						"x":         x,
+						"y":         y,
+						"rotation":  rotation,
+					}
 				}
-			}	
+			}
 		}
+
 		if wsMsg["type"] == "player_hit" {
 			shooterId := wsMsg["shooter_id"].(string)
 			targetId := wsMsg["target_id"].(string)
 			damage := 20
 			bullet_x := wsMsg["bullet_x"].(float64)
 			bullet_y := wsMsg["bullet_y"].(float64)
-			
-			if player, exists := rooms[roomId].Players[targetId]; exists{
+
+			if player, exists := rooms[roomId].Players[targetId]; exists {
 				player.Health -= damage
 				var shooterScore int
 				if player.Health <= 0 {
-					if shooter, shooterExists:= rooms[roomId].Players[shooterId]; shooterExists{
+					if shooter, shooterExists := rooms[roomId].Players[shooterId]; shooterExists {
 						shooter.Score += 10
 						shooterScore = shooter.Score
 					}
-					if(player.Lifes > 1){
+					if player.Lifes > 1 {
 						player.Health = 100
-					}else{
+					} else {
 						player.Health = 0
 					}
 					player.Lifes -= 1
 					game.ReSpawnPlayer(player, rooms[roomId])
 				} else {
-					if shooter, shooterExists:= rooms[roomId].Players[shooterId]; shooterExists{
+					if shooter, shooterExists := rooms[roomId].Players[shooterId]; shooterExists {
 						shooter.Score += 5
 						shooterScore = shooter.Score
 					}
 					response := map[string]interface{}{
-						"type": "player_hit",
-						"target_id": targetId,
-						"health": player.Health,
-						"bullet_x": bullet_x,
-						"bullet_y": bullet_y,
+						"type":       "player_hit",
+						"target_id":  targetId,
+						"health":     player.Health,
+						"bullet_x":   bullet_x,
+						"bullet_y":   bullet_y,
 						"shooter_id": shooterId,
-						"score": shooterScore,
-						"lifes": player.Lifes,
+						"score":      shooterScore,
+						"lifes":      player.Lifes,
 					}
 					game.BroadcastToPlayers(rooms[roomId].Players, response)
 				}
 			}
 		}
+
 		if wsMsg["type"] == "player_hit_asteroid" {
 			playerId := wsMsg["playerId"].(string)
-			if player, exists := rooms[roomId].Players[playerId]; exists{
+			if player, exists := rooms[roomId].Players[playerId]; exists {
 				player.Lifes--
 				game.ReSpawnPlayer(player, rooms[roomId])
 			}
-		} // Track who clicked restart
+		}
 
-		if wsMsg["type"] == "player-ready" { 
+		if wsMsg["type"] == "player-ready" {
 			playerId := wsMsg["playerId"].(string)
-
-			readyPlayers[playerId] = true // Mark player as ready
+			readyPlayers[playerId] = true
 			fmt.Println("Players ready: ", readyPlayers)
 
 			// Check if both players in the room are ready
@@ -246,12 +250,9 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				response := map[string]interface{}{
 					"type": "game-start",
 				}
-				game.BroadcastToPlayers(rooms[roomId].Players, response) 
-				readyPlayers = make(map[string]bool) 
+				game.BroadcastToPlayers(rooms[roomId].Players, response)
+				readyPlayers = make(map[string]bool)
 			}
 		}
 	}
-	
 }
-
-// TODO: Server connections to be stored in .env

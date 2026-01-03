@@ -6,10 +6,13 @@ import (
 )
 
 func BroadcastToPlayers(players map[string]*domain.Player, message map[string]interface{}) {
-	for _, player := range players {
-		err := player.Ws.WriteJSON(message)
-		if err != nil {
-			fmt.Println("Error broadcasting message:", err)
-		}
-	}
+    for _, player := range players {
+        select {
+        case player.Send <- message:
+            // Message sent successfully
+        default:
+            // Channel is full, skiping this player
+            fmt.Println("Warning: player channel full, dropping message")
+        }
+    }
 }
